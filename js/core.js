@@ -43,7 +43,7 @@
       fontScale: 1,        // 0.9 / 1 / 1.15 / 1.3
       boxOpacity: 0.93,
       toasts: true,        // "Uraraka will remember that."
-      skipUnread: true,    // let Skip run through text you've never read
+      skipUnread: false,   // let Skip run through text you've never read
       kenBurns: !reduced,  // slow background drift
     },
     data: null,
