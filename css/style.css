@@ -152,7 +152,7 @@ body.no-kb .bg.kb { animation: none; }
 }
 #hud button:hover { background: rgba(40, 40, 50, .85); transform: translateY(-1px); }
 #hud button.active { background: var(--accent); color: #1a1520; border-color: transparent; }
-.ui-hidden #hud, .ui-hidden #dialog, .ui-hidden #choices, .ui-hidden #banner, .ui-hidden #toasts { opacity: 0 !important; pointer-events: none !important; }
+.ui-hidden #hud, .ui-hidden #dialog, .ui-hidden #choices, .ui-hidden #banner, .ui-hidden #toasts, .ui-hidden #sprites { opacity: 0 !important; pointer-events: none !important; }
 .choosing #hud [data-act="auto"], .choosing #hud [data-act="skip"] { opacity: .4; }
 
 #banner {

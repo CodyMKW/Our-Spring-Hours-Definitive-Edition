@@ -244,8 +244,8 @@
       return;
     }
     if (mode.auto) {
-      const base = [1100, 1900, 3000][Settings.get("autoDelay")];
-      const ms = base + fullText.length * 34;
+      const base = [600, 1100, 1900][Settings.get("autoDelay")];
+      const ms = base + fullText.length * 26;
       autoTimer = setTimeout(() => { if (mode.auto && !mode.choosing && !mode.modal) advance(true); }, TEST ? 30 : ms);
     }
   }
@@ -513,7 +513,7 @@
       if (typeLine._finish) typeLine._finish();
       return;
     }
-    if (mode.skip && fromTimer && !Settings.get("skipUnread") && nextLineUnread()) { stopSkip(); return; }
+    if (mode.skip && fromTimer && !Settings.get("skipUnread") && nextLineUnread()) { stopSkip(); if (Settings.get("toasts")) toast("Skip stopped at unread text (change in Options)"); return; }
     if (!fromTimer) { stopAuto(); A.sfx("click"); }
     run();
   }

@@ -35,7 +35,7 @@
   const Settings = {
     defaults: {
       textSpeed: 2,        // 0 slow, 1 normal, 2 fast, 3 instant
-      autoDelay: 2,        // 0 short, 1 normal, 2 long
+      autoDelay: 1,        // 0 short, 1 normal, 2 long
       music: 0.55,
       sfx: 0.7,
       muted: false,
@@ -43,7 +43,7 @@
       fontScale: 1,        // 0.9 / 1 / 1.15 / 1.3
       boxOpacity: 0.93,
       toasts: true,        // "Uraraka will remember that."
-      skipUnread: false,   // let Skip run through text you've never read
+      skipUnread: true,    // let Skip run through text you've never read
       kenBurns: !reduced,  // slow background drift
     },
     data: null,
