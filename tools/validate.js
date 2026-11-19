@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..");
 const win = { addEventListener(){}, document: { readyState: "complete", addEventListener(){}, getElementById(){return null;} }, localStorage: { getItem(){return null;}, setItem(){}, removeItem(){} } };
 win.window = win; win.self = win;
 const ctx = vm.createContext(Object.assign(win, { console, setInterval(){}, setTimeout, clearTimeout, localStorage: win.localStorage }));
-for (const f of ["js/data.js","js/core.js","js/dsl.js","js/story/part1.js","js/story/part2.js","js/story/part3.js","js/story/endings.js"])
+for (const f of ["js/data.js","js/core.js","js/dsl.js","js/story/part1.js","js/story/part2.js","js/story/part3.js","js/story/bonus.js","js/story/endings.js"])
   vm.runInContext(fs.readFileSync(path.join(root, f), "utf8"), ctx, { filename: f });
 const V = win.VN, D = win.VN_DATA, C = win.VN_CORE;
 V.compile();

@@ -21,7 +21,8 @@ const path = require("path");
         const id = await pg.evaluate(() => Game.S.hist["p" + Game.S.part]);
         seen[id] = (seen[id] || 0) + 1;
         if (r < 3) await pg.screenshot({ path: `/tmp/end_${r}_${id}.png` });
-        if (st.part >= 3) break;
+        if (st.part >= 4) break;
+        if (st.part === 3) { await pg.evaluate(() => Game.newGame(4, "carry")); continue; }
         await pg.evaluate(() => { const S = Game.S; const next = VN_CORE.carryOver(S, S.part + 1); Game.startFromState(next); });
         continue;
       }

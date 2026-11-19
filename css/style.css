@@ -18,7 +18,7 @@
   --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-[data-part="1"] {
+[data-part="1"], [data-part="4"] {
   --box-bg: rgba(253, 246, 233, var(--box-a));
   --box-text: #2f2a3a;
   --box-edge: #eaddbd;
@@ -353,3 +353,9 @@ body.no-kb .bg.kb { animation: none; }
   * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
 body.no-fx #tint { display: none; }
+
+/* bonus story button on the title screen */
+.btn.bonus { background: linear-gradient(135deg, #ffe8a3, #e0a93b); color: #4a2d08; border-color: rgba(255,255,255,.5); }
+.btn.bonus small { opacity: .8; }
+.btn.bonus.locked { background: rgba(255,255,255,.08); color: rgba(255,255,255,.5); border-style: dashed; cursor: not-allowed; }
+[data-part="4"] .end-title { text-shadow: 0 0 30px rgba(255, 214, 120, .5); }

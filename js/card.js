@@ -17,7 +17,7 @@
     neutral: { name: "BRONZE",      a: "#f0c9a0", b: "#b97a45", c: "#53301a" },
     bad:     { name: "ASHEN",       a: "#bdb7b5", b: "#6b6462", c: "#262222" },
   };
-  const PART = { 1: ["PART I", "Our Spring Hours"], 2: ["PART II", "Ashfall"], 3: ["PART III", "Last Light"] };
+  const PART = { 1: ["PART I", "Our Spring Hours"], 2: ["PART II", "Ashfall"], 3: ["PART III", "Last Light"], 4: ["BONUS", "The Hundredth Petal"] };
   const STATS = [["ura", "Uraraka", "#ff6f8f", 1], ["fri", "Friendship", "#5b93c7", 1], ["fal", "Falcon", "#7fa25c", 1],
                  ["maki", "Maki", "#d0642f", 2], ["light", "Light", "#c9a56a", 2]];
   const imgCache = {};
@@ -67,7 +67,7 @@
     const spots = [[.2, .62, 120], [.8, .62, 120], [.07, .78, 92], [.93, .78, 92]];
     mates.forEach((k, i) => {
       const im = face[k]; if (!im) return; const [fx, fy, hh] = spots[i], ww = hh * im.width / im.height;
-      const gone = part === 3 && S.dead && S.dead[k];
+      const gone = part >= 3 && S.dead && S.dead[k];
       c.save(); if (gone) c.filter = "grayscale(1) brightness(.5)"; c.globalAlpha = gone ? .75 : 1;
       c.drawImage(im, ax + aw * fx - ww / 2, ay + ah * fy - hh / 2 + 34, ww, hh); c.restore();
     });
@@ -116,9 +116,9 @@
     } catch (e) {}
 
     // footer
-    const lost = part === 3 ? Object.keys(S.dead || {}).filter(k => S.dead[k]).length : 0;
+    const lost = part >= 3 ? Object.keys(S.dead || {}).filter(k => S.dead[k]).length : 0;
     c.fillStyle = R.b; c.font = "600 13px Nunito, system-ui, sans-serif";
-    const foot = part === 3 ? (lost ? `${lost} lost on the battlegrounds` : "Everyone came home") : (def.kind === "true" ? "True ending" : "Ending");
+    const foot = part >= 3 ? (lost ? `${lost} lost on the battlegrounds` : "Everyone came home") : (def.kind === "true" ? "True ending" : "Ending");
     c.fillText(foot, 38, H - 44);
     c.textAlign = "right"; c.fillText("OUR SPRING HOURS · DEFINITIVE EDITION", W - 38, H - 44); c.textAlign = "left";
     c.restore();

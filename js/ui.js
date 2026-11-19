@@ -32,8 +32,10 @@
   }
   const btn = (label, onclick, cls, extra) => h("button", Object.assign({ type: "button", class: cls || "btn", onclick }, extra || {}), label);
 
-  const PART_NAMES = { 1: "Our Spring Hours", 2: "Ashfall", 3: "Last Light" };
-  const ROMAN = ["", "I", "II", "III"];
+  const PART_NAMES = { 1: "Our Spring Hours", 2: "Ashfall", 3: "Last Light", 4: "The Hundredth Petal" };
+  const ROMAN = ["", "I", "II", "III", "IV"];
+  const partTag = (p) => p === 4 ? "Bonus" : "Part " + ROMAN[p];
+  const bonusUnlocked = () => [1, 2, 3].every(p => Object.keys(Global.d.endings).some(id => V.endingsDef[id] && V.endingsDef[id].part === p));
   const fmtDate = (t) => { const d = new Date(t); return d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }); };
 
   /* ================================================================== MODAL */
@@ -88,12 +90,15 @@
       const sv = latest.data;
       menu.append(h("button", { type: "button", class: "btn big primary", onclick: () => { A.init(); g.loadFrom(latest.slot); } },
         h("span", {}, "Continue"),
-        h("small", {}, `Part ${ROMAN[sv.part]} · ${(sv.chapter || "").split(" — ")[0] || "in progress"}`)));
+        h("small", {}, `${partTag(sv.part)} · ${(sv.chapter || "").split(" — ")[0] || "in progress"}`)));
     }
     menu.append(
       btn("New Game", () => { A.init(); confirmNew(); }, "btn big" + (latest ? "" : " primary")),
       btn("Chapter Select", () => openPartSelect(), "btn big"),
       btn("Load Game", () => openSaves("load", { from: "title" }), "btn big"),
+      bonusUnlocked()
+        ? h("button", { type: "button", class: "btn big bonus", onclick: () => { A.init(); confirmBonus(); } }, h("span", {}, "\u2605 Bonus Story"), h("small", {}, "The Hundredth Petal"))
+        : h("button", { type: "button", class: "btn big bonus locked", disabled: true, title: "Finish all three parts to unlock" }, h("span", {}, "\u2605 Bonus Story"), h("small", {}, "Finish all three parts to unlock")),
       h("div", { class: "menu-row" },
         btn("Memories", () => openGallery({ from: "title" }), "btn"),
         btn("\u2726 Cards", () => openCards({ from: "title" }), "btn"),
@@ -101,6 +106,11 @@
         btn("Credits", () => openCredits({ from: "title" }), "btn")));
     const t = endingTotals();
     $("titleVer").textContent = `v${D.VERSION} · endings ${t.got}/${t.total}`;
+  }
+
+  function confirmBonus() {
+    if (!Global.d.carry[3]) { openModal("Bonus Story", h("p", {}, "Finish Part III on this device to play the Bonus Story with your own history."), { back: null }); return; }
+    G().newGame(4, "carry");
   }
 
   function confirmNew() {
@@ -144,7 +154,7 @@
       list.append(h("button", { type: "button", class: "preset", onclick: () => { A.init(); closeAll(); G().newGame(part, pr.id); } },
         h("strong", {}, pr.title)));
     });
-    openModal(`Part ${ROMAN[part]} — choose your history`, h("div", { class: "stack" },
+    openModal(`${partTag(part)} — choose your history`, h("div", { class: "stack" },
       h("p", { class: "muted" }, part === 2 ? "How did Part I end for you?" : "How did Ashfall end for you?"), list),
       { back: () => openPartSelect() });
   }
@@ -175,7 +185,7 @@
     const label = isAuto ? "Autosave" : "Slot " + slot;
     const bgFile = sv && sv.bg && D.BACKGROUNDS[sv.bg] ? D.BG_DIR + D.BACKGROUNDS[sv.bg].file : null;
     const inner = [
-      h("div", { class: "slot-thumb", style: bgFile ? `background-image:url('${bgFile}')` : "" }, sv ? h("span", { class: "badge" }, "Part " + ROMAN[sv.part]) : null),
+      h("div", { class: "slot-thumb", style: bgFile ? `background-image:url('${bgFile}')` : "" }, sv ? h("span", { class: "badge" }, partTag(sv.part)) : null),
       h("div", { class: "slot-meta" },
         h("div", { class: "slot-name" }, label),
         sv ? h("div", { class: "slot-ch" }, sv.chapter || "—") : h("div", { class: "slot-ch muted" }, "Empty"),
@@ -277,10 +287,10 @@
   function openCards(o) {
     o = o || {};
     const msg = h("p", { class: "muted small" }, "");
-    const rows = [1, 2, 3].map(p => {
+    const rows = [1, 2, 3, 4].map(p => {
       const c = Global.d.carry[p], id = c && c.hist && c.hist["p" + p], def = id && V.endingsDef[id];
       return h("div", { class: "slot-row", style: "display:flex;align-items:center;gap:12px;justify-content:space-between;padding:8px 0" },
-        h("div", {}, h("div", {}, h("strong", {}, `Part ${ROMAN[p]} — ${PN[p]}`)), h("div", { class: "muted small" }, def ? `Last finished: ${def.title}` : "Not finished on this device yet")),
+        h("div", {}, h("div", {}, h("strong", {}, `${partTag(p)} — ${PN[p]}`)), h("div", { class: "muted small" }, def ? `Last finished: ${def.title}` : "Not finished on this device yet")),
         def ? btn("View card", () => window.VN_CARD.open(def, clone(c), { back: () => openCards(o) }), "btn small") : h("span", { class: "muted small" }, "—"));
     });
     const input = h("input", { type: "file", accept: "application/json,.json", class: "file" });
@@ -422,8 +432,8 @@
       if (which === "endings") {
         const t = endingTotals();
         pane.append(h("p", { class: "muted" }, `${t.got} of ${t.total} endings found.`));
-        [1, 2, 3].forEach(p => {
-          pane.append(h("h3", {}, `Part ${ROMAN[p]} — ${PART_NAMES[p]}`));
+        [1, 2, 3, 4].forEach(p => {
+          pane.append(h("h3", {}, `${partTag(p)} — ${PART_NAMES[p]}`));
           Object.values(V.endingsDef).filter(e => e.part === p).forEach(e => {
             const got = !!Global.d.endings[e.id];
             pane.append(h("div", { class: "end-row" + (got ? " got" : "") },
@@ -481,7 +491,7 @@
     const t = endingTotals();
     const lines = def.lines.map(l => typeof l === "function" ? l(S) : l).filter(Boolean);
     const card = h("div", { class: "end-card kind-" + def.kind },
-      h("p", { class: "eyebrow" }, `Part ${ROMAN[def.part]} · ${PART_NAMES[def.part]} — ${def.kind === "true" ? "True Ending" : "Ending"}`),
+      h("p", { class: "eyebrow" }, `${partTag(def.part)} · ${PART_NAMES[def.part]} — ${def.kind === "true" ? "True Ending" : "Ending"}`),
       h("h2", { class: "end-title" }, def.title),
       h("div", { class: "end-body" }, lines.map((l, i) => h("p", { style: `animation-delay:${0.8 + i * 1.4}s` }, l))));
     if (def.part === 3) {
@@ -495,10 +505,11 @@
     }
     const actions = h("div", { class: "end-actions", style: `animation-delay:${1.6 + lines.length * 1.4}s` });
     if (def.part < 3) {
-      actions.append(btn(`Continue to Part ${ROMAN[def.part + 1]}: ${PART_NAMES[def.part + 1]} →`, () => { G().startFromState(carryOver(clone(S), def.part + 1)); }, "btn big primary"));
+      actions.append(btn(`Continue to ${partTag(def.part + 1)}: ${PART_NAMES[def.part + 1]} →`, () => { G().startFromState(carryOver(clone(S), def.part + 1)); }, "btn big primary"));
       actions.append(btn("Save carry file", () => download(`our-spring-hours-part${def.part}-${def.id}.json`, { osh: "definitive", nextPart: def.part + 1, state: carryOver(clone(S), def.part + 1), final: { stats: clone(S.stats), aloof: S.aloof, flags: clone(S.flags), dead: clone(S.dead || {}) }, ending: { id: def.id, title: def.title, part: def.part } }), "btn small"));
     } else {
-      actions.append(btn("Credits", () => openCredits({ onClose: null }), "btn big primary"));
+      if (def.part === 3 && bonusUnlocked()) actions.append(btn("\u2605 Play the Bonus Story \u2192", () => { G().newGame(4, "carry"); }, "btn big primary"));
+      actions.append(btn("Credits", () => openCredits({ onClose: null }), "btn big" + (def.part === 3 && bonusUnlocked() ? "" : " primary")));
     }
     actions.append(btn("\u2726 Keepsake card", () => window.VN_CARD.open(def, clone(S)), "btn small"));
     actions.append(btn("Try a different choice", () => G().undoEnding(), "btn small"),

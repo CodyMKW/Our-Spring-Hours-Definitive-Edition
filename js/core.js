@@ -108,7 +108,7 @@
       aloof: 0,
       flags: {},
       dead: {},
-      hist: { p1: null, p2: null, p3: null }, // ending id reached in each part
+      hist: { p1: null, p2: null, p3: null, p4: null }, // ending id reached in each part
       scene: { bg: null, music: null, weather: null, stage: [] },
       lines: 0,
     };
@@ -119,12 +119,13 @@
   /* Carry a finished state into the next part (see README "Stat carry-over"). */
   function carryOver(prev, nextPart) {
     const s = newState(nextPart);
-    const k = nextPart === 2 ? 0.5 : 0.6;
+    const k = nextPart === 2 ? 0.5 : nextPart === 3 ? 0.6 : 1;   // the bonus story keeps your full Part III stats
     ["ura", "fri", "fal", "maki", "light"].forEach(key => {
       s.stats[key] = Math.round((prev.stats[key] || 0) * k);
     });
     s.hist = clone(prev.hist);
     s.flags = clone(prev.flags || {});   // every flag is a story callback; keep them all
+    if (nextPart === 4) { s.dead = clone(prev.dead || {}); s.aloof = prev.aloof || 0; }
     return s;
   }
 

@@ -45,6 +45,10 @@ window.VN_DATA = (function () {
     battlegrounds:      { file: "battlegrounds.jpg",      name: "The Battlegrounds" },
     battlegrounds_dusk: { file: "battlegrounds_dusk.jpg", name: "The Battlegrounds — Smoke" },
     battlegrounds_dawn: { file: "battlegrounds_dawn.jpg", name: "The Battlegrounds — Dawn" },
+    home_morning:       { file: "home_morning.jpg",       name: "Cody's Room — Morning" },
+    courtyard_bloom:    { file: "courtyard_bloom.jpg",    name: "Courtyard — Full Bloom" },
+    courtyard_lanterns: { file: "courtyard_lanterns.jpg", name: "Courtyard — Lanterns" },
+    rooftop_dawn:       { file: "rooftop_dawn.jpg",       name: "Rooftop — Dawn" },
     night_sky:          { file: "night_sky.jpg",          name: "Starlight" },
   };
 
@@ -53,5 +57,5 @@ window.VN_DATA = (function () {
   /* Music moods used by the procedural score (js/audio.js). */
   const MOODS = ["spring", "night", "festival", "tense", "ruin", "sorrow", "hope", "battle", "quiet"];
 
-  return { CHARACTERS, BACKGROUNDS, BG_DIR, MOODS, VERSION: "1.0.0" };
+  return { CHARACTERS, BACKGROUNDS, BG_DIR, MOODS, VERSION: "1.1.0" };
 })();

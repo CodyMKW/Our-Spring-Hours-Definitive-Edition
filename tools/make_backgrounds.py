@@ -407,6 +407,65 @@ def night_sky():
     a = vignette(a, 0.4)
     save(grain(a, 0.012), "night_sky")
 
+# ---------------------------------------------------------------- bonus-story backgrounds (Epilogue)
+def home_morning():
+    a = load("home_day")
+    a = tone(a, bright=1.05, contrast=1.02, sat=1.08, tint=(1.12, 1.03, 0.9), gamma=0.95)
+    a = glow(a, 250, 230, 380, (1.0, 0.86, 0.55), 0.6)
+    y, x = yy_xx()
+    shafts = np.clip(np.sin((x - y * 0.55) / 26.0), 0, 1) * np.exp(-(((x - 300) / 420) ** 2)) * np.clip(1 - y / 620, 0, 1)
+    a = screen(a, blur(shafts, 7)[..., None] * np.array([0.6, 0.5, 0.3]) * 0.4)
+    a = screen(a, blur(layer_to_arr(particles(120, (255, 235, 190), (0.8, 2.4), (90, 210), (60, 60, 900, 620), 31)), 1.1))
+    a = bloom(a, 0.62, 18, 0.5)
+    a = vignette(a, 0.35)
+    save(grain(a, 0.016), "home_morning")
+
+def courtyard_bloom():
+    a = load("courtyard_day")
+    a = tone(a, bright=1.08, contrast=1.04, sat=1.18, tint=(1.06, 1.0, 1.04), gamma=0.93)
+    # push the blossom pinks: lift pixels where red dominates and green is low
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    pink = np.clip((r - g) * 3.2, 0, 1) * np.clip((b - g) * 4.0 + 0.4, 0, 1)
+    a = a + blur(pink, 2)[..., None] * np.array([0.10, 0.02, 0.06])
+    a = glow(a, 640, 60, 560, (1.0, 0.93, 0.8), 0.45)
+    a = bloom(a, 0.6, 20, 0.55)
+    rng2 = np.random.default_rng(41)
+    a = screen(a, blur(layer_to_arr(particles(210, (255, 215, 228), (1.6, 4.8), (150, 255), (0, 0, W, H), 41)), 0.8) * 1.2)
+    a = screen(a, blur(layer_to_arr(particles(60, (255, 255, 255), (1.0, 2.2), (120, 220), (0, 0, W, H), 42)), 1.2) * 0.8)
+    a = vignette(a, 0.32)
+    save(grain(a, 0.014), "courtyard_bloom")
+
+def rooftop_dawn():
+    a = load("rooftop_sunset")
+    a = tone(a, bright=0.98, contrast=0.98, sat=0.78, tint=(0.97, 0.9, 1.2), gamma=1.0)
+    a = glow(a, 640, 470, 520, (1.0, 0.72, 0.62), 0.55)
+    a = glow(a, 640, 500, 220, (1.0, 0.9, 0.7), 0.5)
+    a = fog(a, (1.0, 0.82, 0.82), 0.22, 0.78, 0.2, 9)
+    a = screen(a, blur(layer_to_arr(particles(70, (255, 225, 230), (1.2, 3.2), (120, 230), (0, 0, W, H), 52)), 0.9))
+    a = bloom(a, 0.6, 22, 0.5)
+    a = vignette(a, 0.4)
+    save(grain(a, 0.014), "rooftop_dawn")
+
+def courtyard_lanterns():
+    """twilight courtyard with paper lanterns drifting up into the sky (memorial / farewell scene)"""
+    a = load("courtyard_day")
+    a = tone(a, bright=0.62, contrast=1.1, sat=0.9, tint=(0.95, 0.82, 1.15), gamma=1.12)
+    sky = vgrad((0.10, 0.08, 0.26), (0.55, 0.32, 0.38), 0.0, 0.7)
+    m = np.clip((np.linspace(0, 1, H)[:, None] * -3 + 1.0), 0, 1)[..., None] * 0.35
+    a = a * (1 - m) + sky * m
+    a = stars(a, (0, 0, W, int(H * 0.3)), 90, 63)
+    im = layer_new(); d = ImageDraw.Draw(im)
+    r2 = random.Random(63)
+    for _ in range(46):
+        cx = r2.randint(60, W - 60); cy = int(r2.uniform(30, 520) ** 1.0)
+        s = r2.uniform(5, 15) * (1.0 - cy / 900)
+        col = r2.choice([(255, 196, 110), (255, 170, 120), (255, 214, 150)])
+        d.rounded_rectangle((cx - s * .7, cy - s, cx + s * .7, cy + s), radius=max(2, int(s * .35)), fill=col + (235,))
+    a = add_layer(a, im, glow_r=14, glow_strength=2.4)
+    a = bloom(a, 0.5, 22, 0.6)
+    a = vignette(a, 0.5)
+    save(grain(a, 0.016), "courtyard_lanterns")
+
 ALL = {
     "home_night": home_night, "home_ruined": home_ruined,
     "courtyard_sunset": courtyard_sunset, "courtyard_night": courtyard_night, "courtyard_ruined": courtyard_ruined,
@@ -414,6 +473,7 @@ ALL = {
     "hallway_ruined": hallway_ruined, "hideout_alert": hideout_alert,
     "ruined_dawn": ruined_dawn, "battlegrounds_dawn": battlegrounds_dawn, "battlegrounds_dusk": battlegrounds_dusk,
     "forest_dusk": forest_dusk, "night_sky": night_sky,
+    "home_morning": home_morning, "courtyard_bloom": courtyard_bloom, "rooftop_dawn": rooftop_dawn, "courtyard_lanterns": courtyard_lanterns,
 }
 
 if __name__ == "__main__":
