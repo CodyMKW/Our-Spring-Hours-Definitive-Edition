@@ -32,6 +32,10 @@
     if (/[?&]test=1/.test(location.search)) {
       Settings.data.textSpeed = 3; Settings.data.effects = false; Settings.data.toasts = false; Settings.data.kenBurns = false; Settings.data.muted = true;
     }
+    // keep sprites standing just above the dialogue box, whatever its height
+    const dlg = $("dialog"), setDlg = () => { const h = dlg.offsetHeight; if (h) document.documentElement.style.setProperty("--dlg", (h + parseFloat(getComputedStyle(dlg).bottom || 0)) + "px"); };
+    if (window.ResizeObserver) new ResizeObserver(setDlg).observe(dlg);
+    window.addEventListener("resize", setDlg); setDlg();
     Game.grab();
     FX.boot();
     UI.apply();

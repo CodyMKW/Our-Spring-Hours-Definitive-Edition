@@ -89,7 +89,7 @@ body.no-kb .bg.kb { animation: none; }
 #sprites { position: absolute; inset: 0; z-index: 5; pointer-events: none; transition: opacity 600ms ease; }
 #sprites.faded { opacity: 0; }
 .spr {
-  position: absolute; bottom: 13vh; height: calc(var(--h) * .64); transform: translate(-50%, 28px); opacity: 0;
+  position: absolute; bottom: calc(var(--dlg, 22vh) - 1vh); height: min(calc(var(--h) * .64), calc(100vh - var(--dlg, 22vh) - 70px)); transform: translate(-50%, 28px); opacity: 0;
   transition: left 520ms cubic-bezier(.3, .8, .3, 1), opacity 380ms ease, transform 420ms cubic-bezier(.3, .8, .3, 1), filter 300ms ease;
   filter: brightness(.9);
 }
@@ -347,8 +347,8 @@ body.no-kb .bg.kb { animation: none; }
   .opt { flex-direction: column; align-items: flex-start; gap: 8px; } .range input { width: 56vw; }
   .slots { grid-template-columns: 1fr; }
 }
-@media (max-aspect-ratio: 1/1) { .spr { height: calc(var(--h) * .5); bottom: 24vh; } }
-@media (max-height: 480px) { #dialog { min-height: 30vh; padding-top: 22px; } #text { min-height: 3.4em; } .spr { height: calc(var(--h) * .55); bottom: 32vh; } }
+@media (max-aspect-ratio: 1/1) { .spr { height: min(calc(var(--h) * .5), calc(100vh - var(--dlg, 22vh) - 70px)); } }
+@media (max-height: 480px) { #dialog { min-height: 30vh; padding-top: 22px; } #text { min-height: 3.4em; } .spr { height: min(calc(var(--h) * .55), calc(100vh - var(--dlg, 22vh) - 60px)); } }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
