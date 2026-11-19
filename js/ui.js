@@ -260,7 +260,7 @@
   }
 
   /* ================================================================== KEEPSAKE CARDS */
-  const PN = { 1: "Our Spring Hours", 2: "Ashfall", 3: "Last Light" };
+  const PN = PART_NAMES;
   function cardFromFile(json) {
     // 1) definitive carry file with raw final stats
     if (json && json.final && json.ending && V.endingsDef[json.ending.id]) {
