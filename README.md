@@ -49,6 +49,7 @@ js/story/part1.js     Part I story + endings
 js/story/part2.js     Part II story + endings
 js/story/part3.js     Part III story + endings
 js/story/endings.js   shared ending resolver helper
+js/card.js            VN_CARD: draws the collectible keepsake card PNG (ending screen → "Keepsake card")
 js/engine.js          Game: interpreter, typewriter, sprites, rollback, autosave
 js/ui.js              VN_UI: title, menus, saves, settings, backlog, bonds, gallery, endings
 js/main.js            boot + input
@@ -82,6 +83,11 @@ Part II starts with Part I stats × 0.5, Part III with × 0.6 (all flags carry; 
 - **Background:** drop a 1280×720 jpg in `assets/backgrounds/`, add an entry to `BACKGROUNDS` in `js/data.js`. `tools/make_backgrounds.py [name…]` regenerates the derived ones from the originals (needs numpy, Pillow).
 - **Character:** transparent webp in `assets/characters/`, add to `CHARACTERS` (`h` = sprite height in vh).
 - **Scene/story:** add labels in a `js/story/*.js` file and `jump` to them. Run `node tools/validate.js`.
+
+## Carry file & keepsake card
+
+- **Save carry file** (ending screen, Parts I–II): downloads a small JSON of your finished state, already converted for the next part. Import it from *Load → Import* on another browser/device (or later) to start Part II/III from that exact history without replaying.
+- **Keepsake card** (every ending): a collectible trading-card PNG — ending art, your cast, bond bars, closest bond, endings found. Rarity follows the ending: True = holographic gold, Good = silver, Neutral = bronze, Bad = ashen. Part III greys out anyone you lost. PNG download needs the game hosted (browsers block canvas export on `file://`); locally it still displays.
 
 ## Saves
 

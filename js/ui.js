@@ -445,6 +445,7 @@
     } else {
       actions.append(btn("Credits", () => openCredits({ onClose: null }), "btn big primary"));
     }
+    actions.append(btn("\u2726 Keepsake card", () => window.VN_CARD.open(def, clone(S)), "btn small"));
     actions.append(btn("Try a different choice", () => G().undoEnding(), "btn small"),
       btn("Return to Title", () => G().toTitle(), "btn small"));
     card.append(fresh ? h("p", { class: "unlock", style: `animation-delay:${1 + lines.length * 1.4}s` }, `✦ New ending — ${t.got} / ${t.total} found`) : null, actions);
@@ -452,5 +453,5 @@
     el.scrollTop = 0;
   }
 
-  window.VN_UI = { showTitle, openPause, closeAll, isModalOpen, renderEnding, openLog, openSettings, openSaves, openBonds, apply, openGallery };
+  window.VN_UI = { showTitle, openPause, closeAll, isModalOpen, renderEnding, openLog, openSettings, openSaves, openBonds, apply, openGallery, openModal };
 })();
