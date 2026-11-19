@@ -87,7 +87,7 @@ Part II starts with Part I stats × 0.5, Part III with × 0.6 (all flags carry; 
 ## Carry file & keepsake card
 
 - **Save carry file** (ending screen, Parts I–II): downloads a small JSON of your finished state, already converted for the next part. Import it from *Load → Import* on another browser/device (or later) to start Part II/III from that exact history without replaying.
-- **Keepsake card** (every ending): a collectible trading-card PNG — ending art, your cast, bond bars, closest bond, endings found. Rarity follows the ending: True = holographic gold, Good = silver, Neutral = bronze, Bad = ashen. Part III greys out anyone you lost. PNG download needs the game hosted (browsers block canvas export on `file://`); locally it still displays.
+- **Keepsake card** (every ending): a collectible trading-card PNG — ending art, your cast, bond bars, closest bond, endings found. Rarity follows the ending: True = holographic gold, Good = silver, Neutral = bronze, Bad = ashen. Part III greys out anyone you lost. From the title screen, **✦ Cards** lists the cards for every chapter you've finished on this device, and can also build a card from a carry file, an exported bundle, or an original Gemini save (older files only hold next-part-scaled stats, so those are scaled back up approximately). PNG download needs the game hosted (browsers block canvas export on `file://`); locally it still displays.
 
 ## Saves
 

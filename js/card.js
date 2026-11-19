@@ -126,7 +126,7 @@
     return cv;
   }
 
-  async function open(def, S) {
+  async function open(def, S, o) {
     const UI = window.VN_UI;
     const cv = await render(def, S);
     cv.style.cssText = "max-width:100%;max-height:70vh;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.5)";
@@ -139,7 +139,7 @@
       catch (e) { msg.textContent = "Download is blocked when the game is opened from a file (browser security). Host it, or take a screenshot."; }
     };
     wrap.append(cv, document.createElement("br"), b, msg);
-    UI.openModal("Keepsake card", wrap, { back: null });
+    UI.openModal("Keepsake card", wrap, { back: (o && o.back) || null });
   }
   window.VN_CARD = { render, open };
 })();

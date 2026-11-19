@@ -5,7 +5,7 @@
    ========================================================================== */
 (function () {
   "use strict";
-  const { Settings, Global, Saves, Store, carryOver, clone, PRESETS, importLegacy } = window.VN_CORE;
+  const { Settings, Global, Saves, Store, carryOver, clone, newState, PRESETS, importLegacy } = window.VN_CORE;
   const D = window.VN_DATA;
   const V = window.VN;
   const A = window.VN_AUDIO;
@@ -96,6 +96,7 @@
       btn("Load Game", () => openSaves("load", { from: "title" }), "btn big"),
       h("div", { class: "menu-row" },
         btn("Memories", () => openGallery({ from: "title" }), "btn"),
+        btn("\u2726 Cards", () => openCards({ from: "title" }), "btn"),
         btn("Options", () => openSettings({ from: "title" }), "btn"),
         btn("Credits", () => openCredits({ from: "title" }), "btn")));
     const t = endingTotals();
@@ -246,6 +247,60 @@
       rd.readAsText(f);
     });
     openModal("Import save file", h("div", { class: "stack" }, msg, input), { back: () => openSaves("load", o) });
+  }
+
+  /* ================================================================== KEEPSAKE CARDS */
+  const PN = { 1: "Our Spring Hours", 2: "Ashfall", 3: "Last Light" };
+  function cardFromFile(json) {
+    // 1) definitive carry file with raw final stats
+    if (json && json.final && json.ending && V.endingsDef[json.ending.id]) {
+      const def = V.endingsDef[json.ending.id], S = newState(def.part);
+      Object.assign(S, { stats: Object.assign(S.stats, json.final.stats), aloof: json.final.aloof || 0, flags: json.final.flags || {}, dead: json.final.dead || {} });
+      return { def, S };
+    }
+    // 2) a bundle: use its stored per-part finished states
+    if (json && json.osh === "definitive-bundle" && json.global && json.global.carry) {
+      const out = Object.keys(json.global.carry).map(k => json.global.carry[k]).filter(c => c && c.hist);
+      return { many: out.map(c => { const id = c.hist["p" + c.part]; return V.endingsDef[id] ? { def: V.endingsDef[id], S: c } : null; }).filter(Boolean) };
+    }
+    // 3) older carry files / original Gemini saves: stats are already scaled for the next part, so undo the scaling
+    const src = (json && json.state && json.state.hist) ? { part: json.state.part, state: json.state } : importLegacy(json);
+    if (!src || !src.state) return null;
+    const prev = src.part - 1, id = src.state.hist && src.state.hist["p" + prev];
+    if (!V.endingsDef[id]) return null;
+    const k = src.part === 2 ? 0.5 : 0.6, S = clone(src.state);
+    Object.keys(S.stats).forEach(key => { S.stats[key] = Math.round(S.stats[key] / k * 10) / 10; });
+    if (prev === 1) { S.stats.maki = 0; S.stats.light = 0; }
+    return { def: V.endingsDef[id], S };
+  }
+
+  function openCards(o) {
+    o = o || {};
+    const msg = h("p", { class: "muted small" }, "");
+    const rows = [1, 2, 3].map(p => {
+      const c = Global.d.carry[p], id = c && c.hist && c.hist["p" + p], def = id && V.endingsDef[id];
+      return h("div", { class: "slot-row", style: "display:flex;align-items:center;gap:12px;justify-content:space-between;padding:8px 0" },
+        h("div", {}, h("div", {}, h("strong", {}, `Part ${ROMAN[p]} — ${PN[p]}`)), h("div", { class: "muted small" }, def ? `Last finished: ${def.title}` : "Not finished on this device yet")),
+        def ? btn("View card", () => window.VN_CARD.open(def, clone(c), { back: () => openCards(o) }), "btn small") : h("span", { class: "muted small" }, "—"));
+    });
+    const input = h("input", { type: "file", accept: "application/json,.json", class: "file" });
+    input.addEventListener("change", () => {
+      const f = input.files && input.files[0]; if (!f) return;
+      const rd = new FileReader();
+      rd.onload = () => {
+        let json; try { json = JSON.parse(rd.result); } catch (e) { msg.textContent = "That file isn't valid JSON."; return; }
+        const r = cardFromFile(json);
+        if (!r) { msg.textContent = "I couldn't find a finished chapter in that file."; return; }
+        if (r.many) { if (!r.many.length) { msg.textContent = "That bundle has no finished chapters."; return; } window.VN_CARD.open(r.many[r.many.length - 1].def, r.many[r.many.length - 1].S, { back: () => openCards(o) }); return; }
+        window.VN_CARD.open(r.def, r.S, { back: () => openCards(o) });
+      };
+      rd.readAsText(f);
+    });
+    openModal("Keepsake cards", h("div", { class: "stack" },
+      h("p", { class: "muted" }, "Finished a chapter? Get its collectible card any time — no need to replay."),
+      ...rows, h("hr", {}),
+      h("p", { class: "muted small" }, "Played on another device? Choose a carry file (from an ending screen), an exported bundle, or an original Gemini save:"),
+      input, msg), { back: backTo(o.from) });
   }
 
   /* ================================================================== SETTINGS */
@@ -441,7 +496,7 @@
     const actions = h("div", { class: "end-actions", style: `animation-delay:${1.6 + lines.length * 1.4}s` });
     if (def.part < 3) {
       actions.append(btn(`Continue to Part ${ROMAN[def.part + 1]}: ${PART_NAMES[def.part + 1]} →`, () => { G().startFromState(carryOver(clone(S), def.part + 1)); }, "btn big primary"));
-      actions.append(btn("Save carry file", () => download(`our-spring-hours-part${def.part}-${def.id}.json`, { osh: "definitive", nextPart: def.part + 1, state: carryOver(clone(S), def.part + 1), ending: { id: def.id, title: def.title } }), "btn small"));
+      actions.append(btn("Save carry file", () => download(`our-spring-hours-part${def.part}-${def.id}.json`, { osh: "definitive", nextPart: def.part + 1, state: carryOver(clone(S), def.part + 1), final: { stats: clone(S.stats), aloof: S.aloof, flags: clone(S.flags), dead: clone(S.dead || {}) }, ending: { id: def.id, title: def.title, part: def.part } }), "btn small"));
     } else {
       actions.append(btn("Credits", () => openCredits({ onClose: null }), "btn big primary"));
     }
@@ -453,5 +508,5 @@
     el.scrollTop = 0;
   }
 
-  window.VN_UI = { showTitle, openPause, closeAll, isModalOpen, renderEnding, openLog, openSettings, openSaves, openBonds, apply, openGallery, openModal };
+  window.VN_UI = { showTitle, openPause, closeAll, isModalOpen, renderEnding, openLog, openSettings, openSaves, openBonds, apply, openGallery, openModal, openCards };
 })();
