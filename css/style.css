@@ -359,3 +359,5 @@ body.no-fx #tint { display: none; }
 .btn.bonus small { opacity: .8; }
 .btn.bonus.locked { background: rgba(255,255,255,.08); color: rgba(255,255,255,.5); border-style: dashed; cursor: not-allowed; }
 [data-part="4"] .end-title { text-shadow: 0 0 30px rgba(255, 214, 120, .5); }
+.btn.bonus:not(.locked):hover, .btn.bonus:not(.locked):focus-visible { background: linear-gradient(135deg, #fff3c4, #f0b845); color: #3a2204; filter: brightness(1.04); transform: translateY(-1px); }
+.btn.bonus:not(.locked):hover small, .btn.bonus:not(.locked):hover span { color: #3a2204; opacity: 1; }
