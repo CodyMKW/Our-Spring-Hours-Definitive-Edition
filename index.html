@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Our Spring Hours — Definitive Edition</title>
+<meta name="description" content="A three-part visual novel: Our Spring Hours, Ashfall, and Last Light. Free, runs in your browser.">
+<meta name="theme-color" content="#0d0e12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231c1c20'/%3E%3Cpath d='M32 14c6 8 14 10 14 20a14 14 0 0 1-28 0c0-10 8-12 14-20z' fill='%23ff6f8f'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app" data-part="1" class="on-title">
+
+  <!-- ================= STAGE ================= -->
+  <div id="stage">
+    <div id="bgB" class="bg"></div>
+    <div id="bgA" class="bg"></div>
+    <canvas id="fx"></canvas>
+    <div id="sprites"></div>
+    <div id="tint"></div>
+    <div id="vignette"></div>
+    <div id="clickzone" aria-hidden="true"></div>
+
+    <div id="banner" role="status"></div>
+
+    <div id="hud" role="toolbar" aria-label="Game controls">
+      <button type="button" data-act="back"  title="Go back one line (←)">⟲<span>Back</span></button>
+      <button type="button" data-act="auto"  title="Auto-advance (A)">▶<span>Auto</span></button>
+      <button type="button" data-act="skip"  title="Skip read text (S, or hold Ctrl)">⏭<span>Skip</span></button>
+      <button type="button" data-act="log"   title="Backlog (L)">☰<span>Log</span></button>
+      <button type="button" data-act="hide"  title="Hide interface (H)">◌<span>Hide</span></button>
+      <button type="button" data-act="save"  title="Quick save">⬇<span>Save</span></button>
+      <button type="button" data-act="menu"  title="Menu (Esc)">⚙<span>Menu</span></button>
+    </div>
+
+    <div id="toasts" aria-live="polite"></div>
+    <div id="choices" role="group" aria-label="Choices"></div>
+
+    <div id="dialog">
+      <div id="nameplate"></div>
+      <div id="text" aria-live="polite"></div>
+      <div id="more" aria-hidden="true">▾</div>
+    </div>
+  </div>
+
+  <!-- ================= FULL-SCREEN CARD ================= -->
+  <div id="card"><div id="cardInner"></div></div>
+
+  <!-- ================= ENDING ================= -->
+  <section id="ending" aria-live="polite"></section>
+
+  <!-- ================= TITLE ================= -->
+  <section id="title">
+    <div class="title-wrap">
+      <p class="eyebrow">a three-part visual novel</p>
+      <h1 class="logo">Our Spring<br>Hours</h1>
+      <p class="edition">Definitive Edition</p>
+      <p class="tagline">Four friends. One rooftop. A whole semester of choices — and everything that comes after.</p>
+      <nav id="titleMenu" class="menu-col" aria-label="Main menu"></nav>
+      <p class="foot">Featuring Cody, Joseph, Falcon, Cementoss &amp; Uraraka — and, later, Maki Oze, Light Yagami, Tomura Shigaraki &amp; All For One.</p>
+      <p class="foot dim" id="titleVer"></p>
+    </div>
+  </section>
+
+  <!-- ================= MODAL ================= -->
+  <div id="modal" aria-hidden="true"><div id="modalCard" role="dialog" aria-modal="true"></div></div>
+</div>
+
+<noscript><p style="color:#fff;padding:2rem;font-family:sans-serif">This visual novel needs JavaScript enabled.</p></noscript>
+
+<!-- scripts are classic (non-module) so the game also works when index.html is opened straight from disk -->
+<script src="js/data.js"></script>
+<script src="js/core.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/fx.js"></script>
+<script src="js/dsl.js"></script>
+<script src="js/story/part1.js"></script>
+<script src="js/story/part2.js"></script>
+<script src="js/story/part3.js"></script>
+<script src="js/story/endings.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
