@@ -40,7 +40,8 @@
 
   /* ------------------------------------------------------------ menu */
   const unlockedIds = (st) => BD.CHARS.filter(c => BD.isUnlocked(c, st)).map(c => c.id);
-  function portraitHTML(ch) { return `<img src="${ch.img}" alt="${ch.name}">`; }
+  const FACE = { cody: 1, joseph: 1, falcon: 1 };
+  function portraitHTML(ch) { return `<img src="${ch.img}" alt="${ch.name}"${FACE[ch.id] ? ' class="face"' : ""}>`; }
 
   function renderPicker() {
     const box = $("picker"); box.innerHTML = "";
@@ -105,7 +106,7 @@
     screen = "play"; $("app").dataset.screen = "play"; $("menu").hidden = true; $("play").hidden = false;
     ["pause", "over", "decree", "how"].forEach(i => $(i).hidden = true);
     $("play").style.setProperty("--c", ch.color);
-    $("pImg").src = ch.img; $("pImg").alt = ch.name; $("pName").textContent = ch.name;
+    $("pImg").src = ch.img; $("pImg").alt = ch.name; $("pImg").classList.toggle("face", !!FACE[ch.id]); $("pName").textContent = ch.name;
     $("abName").textContent = $("abNameM").textContent = ch.ability.name; ["abGlyph", "abGlyphM"].forEach(i => $(i).textContent = ch.ability.icon);
     $("best").textContent = $("mBest").textContent = (stats.perChar[ch.id] ? stats.perChar[ch.id].best : 0).toLocaleString();
     $("bubble").classList.remove("on");
