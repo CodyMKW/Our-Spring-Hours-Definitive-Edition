@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Blossom Drop Versus (Beta) — Our Spring Hours</title>
+<meta name="description" content="Two-player peer-to-peer Blossom Drop. Race to merge, send stones, outlast your friend.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="multiplayer.css">
+</head>
+<body>
+<div id="backdrop"><div id="bdA"></div><div id="bdB"></div></div>
+<canvas id="petals" aria-hidden="true"></canvas>
+
+<main id="app" data-screen="lobby">
+
+  <!-- ============================ LOBBY ============================ -->
+  <section id="lobby" class="screen">
+    <header class="logo">
+      <p class="eyebrow">an <em>Our Spring Hours</em> game</p>
+      <h1>Blossom <span>Drop</span> <i class="beta">Versus&nbsp;&middot;&nbsp;Beta</i></h1>
+      <p class="tagline">Two players. Same pieces. Big merges send stones to your rival&rsquo;s jar.</p>
+    </header>
+
+    <div class="lobby-body">
+      <div class="lobby-card card" id="meCard">
+        <h3>You</h3>
+        <label class="name-field">Your name
+          <input id="nameIn" type="text" maxlength="14" autocomplete="off" spellcheck="false" placeholder="Enter a name">
+        </label>
+        <div class="picker" id="picker" role="listbox" aria-label="Choose your character"></div>
+        <p class="pick-info" id="pickInfo"></p>
+      </div>
+
+      <div class="lobby-card card" id="netCard">
+        <!-- not connected -->
+        <div id="stepStart">
+          <h3>Play a friend</h3>
+          <div class="tabs" role="tablist">
+            <button class="tab on" id="tabHost" type="button" role="tab">Host a room</button>
+            <button class="tab" id="tabJoin" type="button" role="tab">Join a room</button>
+          </div>
+          <div id="paneHost" class="pane">
+            <p class="muted">Create a room, then send your friend the code or link.</p>
+            <button class="cta" id="hostBtn" type="button"><span>Create room</span></button>
+          </div>
+          <div id="paneJoin" class="pane" hidden>
+            <p class="muted">Enter the 5-letter code your friend sent you.</p>
+            <div class="join-row">
+              <input id="codeIn" type="text" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCDE">
+              <button class="cta" id="joinBtn" type="button"><span>Join</span></button>
+            </div>
+          </div>
+          <p class="net-msg" id="netMsg" role="status"></p>
+        </div>
+
+        <!-- in a room -->
+        <div id="stepRoom" hidden>
+          <div class="room-head">
+            <div>
+              <small>Room code</small>
+              <div class="room-code" id="roomCode">-----</div>
+            </div>
+            <div class="room-actions" id="roomActions">
+              <button class="btn" id="copyCode" type="button">Copy code</button>
+              <button class="btn" id="copyLink" type="button">Copy invite link</button>
+            </div>
+          </div>
+          <div class="vs-preview">
+            <div class="pp-card" id="ppMe"><div class="pp-av"></div><b class="pp-name"></b><small class="pp-char"></small><span class="pp-tag">You</span></div>
+            <div class="vs-badge">VS</div>
+            <div class="pp-card" id="ppOpp"><div class="pp-av"></div><b class="pp-name">Waiting…</b><small class="pp-char">Nobody here yet</small><span class="pp-tag" id="oppTag">Rival</span></div>
+          </div>
+          <p class="net-msg" id="roomMsg" role="status"></p>
+          <button class="cta" id="startBtn" type="button" disabled><span>Start match</span></button>
+          <button class="btn" id="leaveRoom" type="button">Leave room</button>
+        </div>
+        <p class="record" id="record"></p>
+      </div>
+    </div>
+
+    <footer class="menu-foot">
+      <a class="ghost" id="backLink" href="index.html">&larr; Single player</a>
+      <button class="ghost" id="howBtn" type="button">How versus works</button>
+      <button class="ghost" id="muteBtn" type="button" aria-label="Toggle sound">Sound: on</button>
+    </footer>
+  </section>
+
+  <!-- ============================ MATCH ============================ -->
+  <section id="vs" class="screen" hidden>
+    <aside class="vs-side vs-me" id="vsMe">
+      <div class="who card">
+        <div class="who-portrait"><img id="pImg" alt=""><div class="bubble" id="bubble"></div></div>
+        <div class="who-name" id="pName"></div>
+        <small class="who-char" id="pChar"></small>
+      </div>
+      <button class="ability-btn card" id="abBtn" type="button">
+        <span class="ring" id="abRing"><span class="ab-glyph" id="abGlyph"></span></span>
+        <span class="ab-txt"><b id="abName"></b><small id="abHint">Charging…</small></span>
+        <kbd>Q</kbd>
+      </button>
+      <div class="card next-card"><small>Next up</small><div class="queue" id="queue"></div></div>
+      <div class="card score-card"><small>Your score</small><b id="score">0</b><div class="row"><span class="chip" id="comboChip">Combo</span></div></div>
+    </aside>
+
+    <div class="stage" id="stage">
+      <div class="vs-top card" id="vsTop">
+        <span class="t-name" id="tMe">You</span>
+        <span class="t-time" id="timer">2:30</span>
+        <span class="t-name r" id="tOpp">Rival</span>
+      </div>
+      <canvas id="jar" aria-label="Your board"></canvas>
+      <div class="incoming" id="incoming" hidden><span class="inc-ico">&#9888;</span> <b id="incN">0</b> stones incoming <i id="incT"></i></div>
+      <div class="toasts" id="toasts"></div>
+      <div class="countdown" id="countdown" hidden></div>
+      <button class="ability-btn card mobile-ab" id="abBtnM" type="button" aria-label="Use ability"><span class="ring" id="abRingM"><span class="ab-glyph" id="abGlyphM"></span></span><span class="ab-txt"><b id="abNameM"></b><small id="abHintM">Charging</small></span></button>
+    </div>
+
+    <aside class="vs-side vs-opp" id="vsOpp">
+      <div class="card opp-card">
+        <div class="opp-head">
+          <div class="opp-av" id="oAv"></div>
+          <div class="opp-id"><b id="oName">Rival</b><small id="oChar"></small></div>
+          <div class="opp-score"><small>Score</small><b id="oScore">0</b></div>
+        </div>
+        <canvas id="mirror" aria-label="Rival's board"></canvas>
+        <div class="opp-meter" title="Rival's ability charge"><i id="oMeter"></i></div>
+        <div class="opp-sent" id="oSent"></div>
+      </div>
+      <button class="btn leave-btn" id="leaveBtn" type="button">Leave match</button>
+    </aside>
+  </section>
+
+  <!-- ============================ OVERLAYS ============================ -->
+  <div id="result" class="overlay" hidden>
+    <div class="modal wide">
+      <p class="eyebrow" id="rWhy">Match over</p>
+      <h2 id="rTitle">You win!</h2>
+      <div class="r-vs">
+        <div class="r-side" id="rMe"><b></b><span></span></div>
+        <div class="r-dash">–</div>
+        <div class="r-side" id="rOpp"><b></b><span></span></div>
+      </div>
+      <p class="muted" id="rNote"></p>
+      <div class="o-actions">
+        <button class="cta" id="rematchBtn" type="button"><span>Rematch</span></button>
+        <button class="btn" id="lobbyBtn" type="button">Back to lobby</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="decree" class="overlay" hidden>
+    <div class="modal">
+      <h2>Decree</h2>
+      <p class="muted">Choose your next piece.</p>
+      <div class="decree-row" id="decreeRow"></div>
+      <button class="btn" id="decreeCancel">Cancel</button>
+    </div>
+  </div>
+
+  <div id="how" class="overlay" hidden>
+    <div class="modal wide">
+      <h2>How versus works</h2>
+      <ul class="howto">
+        <li>One player <b>hosts</b> and shares a 5-letter code (or invite link). The other <b>joins</b>. It&rsquo;s a direct peer-to-peer connection &mdash; no account, no server of ours.</li>
+        <li>Both jars get the <b>same pieces in the same order</b>. You can watch your rival&rsquo;s jar live.</li>
+        <li><b>Combos and big merges send stones</b> to your rival&rsquo;s jar: x2 combo = 1 stone, x3 = 2&hellip; and Wish Charm and up send more. Stones never merge and crumble after about 12 seconds.</li>
+        <li>Incoming stones land after a short warning &mdash; <b>send an attack first</b> and it cancels theirs.</li>
+        <li>Lose when your jar overflows. If time runs out, the <b>higher score</b> wins.</li>
+        <li>Every character&rsquo;s ability works here too. Only characters you&rsquo;ve unlocked in single player can be picked.</li>
+      </ul>
+      <button class="cta" id="howClose"><span>Got it</span></button>
+    </div>
+  </div>
+</main>
+
+<script src="vendor/matter.min.js"></script>
+<script src="vendor/peerjs.min.js"></script>
+<script src="../js/core.js"></script>
+<script src="../js/audio.js"></script>
+<script src="js/data.js"></script>
+<script src="js/art.js"></script>
+<script src="js/sfx.js"></script>
+<script src="js/game.js"></script>
+<script src="js/net.js"></script>
+<script src="js/versus.js"></script>
+<script>if (location.protocol !== "file:") document.getElementById("backLink").href = "./";</script>
+</body>
+</html>

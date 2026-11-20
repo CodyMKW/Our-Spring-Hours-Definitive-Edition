@@ -119,9 +119,23 @@ Each VN character is a playable piece with a unique ability, charged by merging 
 
 **Controls:** mouse/touch to aim and release; `←/→` or `A/D` move, `Space/↓/Enter` drop, `Q/E/↑/W` ability, `Esc/P` pause, `R` restart, `1–5` in the Decree picker.
 
-**Files:** `blossom/{index.html, style.css, vendor/matter.min.js (MIT, see matter.LICENSE), js/data.js, art.js, sfx.js, game.js, ui.js}`. All art is drawn procedurally on canvas and all sound is synthesized — no image/audio files. Physics: Matter.js 0.19.
+**Files:** `blossom/{index.html, multiplayer.html, style.css, multiplayer.css, vendor/matter.min.js + peerjs.min.js (MIT, see *.LICENSE), js/data.js, art.js, sfx.js, game.js, ui.js, net.js, versus.js}`. All art is drawn procedurally on canvas and all sound is synthesized — no image/audio files. Physics: Matter.js 0.19.
 
 **Saves:** `localStorage["osh-de:blossom"]` = `{games, best, maxTier, bestCombo, merges, perChar, lastChar, seenUnlocked}`. VN progress is read from `osh-de:global`, so the VN and `blossom/` must be served from the same origin/folder for unlocks to track. `blossom/index.html?unlock=all` unlocks everyone for testing.
+
+### Versus (beta) — `blossom/multiplayer.html`
+
+Two-player, peer-to-peer. Open it from the single-player menu (**Versus · Beta**) or directly.
+
+1. Pick a **name** (up to 14 characters, saved on this device; both players see each other's) and a character (only ones you've unlocked).
+2. **Host a room** → share the 5-letter code or **Copy invite link** (`multiplayer.html?join=ABCDE`). The friend picks **Join a room**, types the code, presses Join.
+3. The host presses **Start match**. 3-2-1, then 2:30 on the clock.
+
+Rules: both jars use the **same random seed** (same pieces, same order); you see your rival's jar live in the small mirror. Merging builds **attacks** that drop grey **stones** (never merge, crumble after 12 s) into the rival's jar: combo xN → N-1 stones; Tomato+ merges → 1 (Tomato) … 5 (Cherry Tree); Full Bloom +6 (max 8 per merge). Incoming stones show a warning and land after ~2.6 s — your own attack during the warning **cancels** them first. Lose when your jar overflows; at time-up the higher score wins; leaving/disconnecting forfeits. Rematch needs both players to press it. Win/loss record is kept in `localStorage["osh-de:blossom-vs"]` (`{name, wins, losses, draws}`).
+
+How it's wired (`js/net.js`, `js/versus.js`): each client simulates only its own jar; ~10×/s it sends a snapshot `{t:"snap", o:[[id,tier,x,y,angle],…], sc, mt, h, px, w}`; other messages are `hello {name,char}`, `start {seed,dur}`, `atk {n}`, `over {score}`, `fin {score}`, `rematch`, `leave`. Transport is **PeerJS** (vendored `vendor/peerjs.min.js`, MIT) — a WebRTC data channel brokered by the free public PeerJS cloud server (ids are `bdrop-CODE`). No server of ours. Most home networks connect directly; very strict NATs/some school or corporate networks can fail because no TURN relay is configured.
+
+Testing without a network: add `?net=local` to the URL (e.g. `multiplayer.html?net=local&unlock=all`) and the two players can be two tabs of the same browser (BroadcastChannel). `node tools/mptest.js` runs two headless pages through lobby → match → attack/cancel → overflow → rematch → forfeit (set `MOBILE=1` to use a phone-size viewport for player A).
 
 Tests: `node tools/bltest.js` (smoke), `bltest2.js` (all abilities), `bltest3.js` (game over + mobile).
 

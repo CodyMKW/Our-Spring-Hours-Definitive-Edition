@@ -21,6 +21,7 @@
   const FLOOR = H - 16;
   const rand = (a, b) => a + Math.random() * (b - a);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
   class Game {
     constructor(canvas, hooks) {
@@ -44,7 +45,7 @@
       ];
       Composite.add(this.engine.world, this.walls);
       this.pairs = [];
-      const push = (e) => { for (const p of e.pairs) { const a = p.bodyA, b = p.bodyB; if (a.orb && b.orb && a.orb.tier === b.orb.tier) this.pairs.push([a, b]); } };
+      const push = (e) => { for (const p of e.pairs) { const a = p.bodyA, b = p.bodyB; if (a.orb && b.orb && a.orb.tier > 0 && a.orb.tier === b.orb.tier) this.pairs.push([a, b]); } };
       Events.on(this.engine, "collisionStart", push);
       Events.on(this.engine, "collisionActive", push);
       Events.on(this.engine, "collisionStart", (e) => {
@@ -56,7 +57,8 @@
       });
     }
 
-    reset(charId) {
+    reset(charId, seed) {
+      this.rng = seed == null ? Math.random : mulberry(seed); this.uid = 0; this.junkQ = [];
       this.char = BD.CHAR[charId] || BD.CHAR.cody;
       this.engine.gravity.y = 1;
       Composite.clear(this.engine.world, false, true);
@@ -73,12 +75,12 @@
       this.heldAnim = 0; this.accum = 0; this.pointerX = W / 2;
     }
 
-    start(charId) { this.reset(charId); this.state = "play"; this.say("start"); }
+    start(charId, seed) { this.reset(charId, seed); this.state = "play"; this.say("start"); }
     pause(on) { if (this.state === "play" || this.state === "decay") { if (on) { this.prevState = this.state; this.state = "paused"; } } else if (this.state === "paused" && !on) this.state = this.prevState || "play"; }
     say(kind) { if (this.hooks.quip) this.hooks.quip(kind); }
 
     randTier() {
-      const w = BD.SPAWN_WEIGHTS; let r = Math.random() * w.reduce((a, b) => a + b, 0);
+      const w = BD.SPAWN_WEIGHTS; let r = this.rng() * w.reduce((a, b) => a + b, 0);
       for (let i = 0; i < w.length; i++) { r -= w[i]; if (r <= 0) return i + 1; }
       return 1;
     }
@@ -86,9 +88,9 @@
 
     /* ------------------------------------------------------------ orbs */
     makeOrb(tier, x, y, vx, vy, pop) {
-      const r = T[tier - 1].r;
+      const r = tier === 0 ? BD.JUNK_R : T[tier - 1].r;
       const b = Bodies.circle(x, y, r, { restitution: 0.1, friction: 0.12, frictionStatic: 0.5, frictionAir: 0.006, density: 0.0014, slop: 0.04, label: "orb" });
-      b.orb = { tier, r, born: this.t, pop: pop || 0, overT: 0, dead: false, spin: 0 };
+      b.orb = { id: ++this.uid, tier, r, born: this.t, pop: pop || 0, overT: 0, dead: false, spin: 0, junk: tier === 0 };
       Body.setVelocity(b, { x: vx || 0, y: vy || 0 });
       Composite.add(this.engine.world, b); this.orbs.push(b);
       return b;
@@ -107,6 +109,12 @@
       this.combo = 0;
     }
     setPointer(lx) { this.pointerX = lx; }
+
+    /* ------------------------------------------------------------ multiplayer helpers */
+    addJunk(n) { for (let i = 0; i < n; i++) this.junkQ.push(this.t + i * 0.22); }
+    spawnJunk() { const x = rand(BD.JUNK_R + 8, W - BD.JUNK_R - 8); this.makeOrb(0, x, -40, rand(-1.2, 1.2), 2, 0.3); BD.sfx.thud(5); this.shake = Math.max(this.shake, 4); }
+    /** compact picture of the jar for the opponent: [[id, tier, x, y, angle], ...] */
+    snapshot() { return this.orbs.map(o => [o.orb.id, o.orb.tier, Math.round(o.position.x * 10) / 10, Math.round(o.position.y * 10) / 10, Math.round(o.angle * 100) / 100]); }
 
     /* ------------------------------------------------------------ merging */
     process() {
@@ -129,6 +137,7 @@
         const gain = Math.round(BD.FULL_BLOOM * mult); this.addScore(gain, mx, my, "#ffd1e3", 30);
         this.burst(mx, my, ["#ffe6ef", "#ff9fc0", "#ffd25a", "#fff"], 70, 360); this.ring(mx, my, 260, "#ffd1e3"); this.shake = 14; this.meter = Math.min(100, this.meter + 35);
         BD.sfx.bloom(); this.say("big"); if (this.hooks.toast) this.hooks.toast("✿ Full Bloom! ✿");
+        if (this.hooks.merged) this.hooks.merged({ nt: tier + 1, combo: this.combo, full: true });
         return;
       }
       const nt = tier + 1, r = T[nt - 1].r;
@@ -141,6 +150,7 @@
       if (!silent) { BD.sfx.pop(nt, this.combo); this.shake = Math.max(this.shake, nt >= 7 ? 5 + nt * 0.5 : 0); }
       this.meter = Math.min(100, this.meter + 2 + nt * 0.9 + (this.combo - 1) * 3);
       if (this.combo >= 2 && this.hooks.toast) this.hooks.toast(`Combo x${this.combo}!`, "combo");
+      if (this.hooks.merged) this.hooks.merged({ nt, combo: this.combo, full: false });
       if (this.combo === 3) this.say("combo"); else if (nt >= 7 && nt === this.maxTier) this.say("big"); else if (this.merges % 9 === 0) this.say("merge");
     }
     addScore(n, x, y, color, size) {
@@ -169,7 +179,7 @@
     abRally() {
       let best = null;
       for (let i = 0; i < this.orbs.length; i++) for (let j = i + 1; j < this.orbs.length; j++) {
-        const a = this.orbs[i], b = this.orbs[j]; if (a.orb.tier !== b.orb.tier) continue;
+        const a = this.orbs[i], b = this.orbs[j]; if (!a.orb.tier || a.orb.tier !== b.orb.tier) continue;
         const d = Math.hypot(a.position.x - b.position.x, a.position.y - b.position.y);
         const sc = a.orb.tier * 1000 - d; if (!best || sc > best.sc) best = { a, b, sc };
       }
@@ -186,13 +196,13 @@
       this.burst(W / 2, y, ["#c9b39a", "#a8957f", "#7d6c5b"], 26, 220);
     }
     abFire() {
-      if (!this.orbs.length) return false; let low = 99; this.orbs.forEach(o => low = Math.min(low, o.orb.tier));
+      if (!this.orbs.length) return false; let low = 99; this.orbs.forEach(o => { if (o.orb.tier > 0) low = Math.min(low, o.orb.tier); }); if (low === 99) return false;
       BD.sfx.ability("fire"); this.shake = 10; this.ring(W / 2, H / 2, 480, "#ff8a3d");
       this.orbs.filter(o => o.orb.tier === low).forEach(o => { this.flameOrb(o, 0.5); });
       return true;
     }
     flameOrb(o, ptsMult) {
-      const t = o.orb.tier, p = o.position; this.addScore(Math.max(1, Math.round(T[t - 1].pts * (ptsMult || 0.5))), p.x, p.y, "#ffb067", 15);
+      const t = o.orb.tier, p = o.position; this.addScore(Math.max(1, Math.round((t ? T[t - 1].pts : 6) * (ptsMult || 0.5))), p.x, p.y, "#ffb067", 15);
       this.burst(p.x, p.y, ["#ffd25a", "#ff8a3d", "#e8402f", "#fff1b8"], 14 + t * 2, 260); this.killOrb(o);
     }
     abPunch() { this.punch = { x: clamp(this.pointerX, 40, W - 40), y: -60, r: 36, vy: 1150, hits: 0 }; BD.sfx.ability("fire"); this.abilityKind = "punch"; this.abilityTime = 1.4; }
@@ -215,16 +225,18 @@
 
     /* ------------------------------------------------------------ main step */
     update(dt) {
-      if (this.state === "paused" || this.state === "idle" || this.state === "decree") { this.tickFx(dt * (this.state === "decree" ? 0.4 : 0)); return; }
+      if (this.state === "paused" || this.state === "idle" || this.state === "done" || this.state === "decree") { this.tickFx(dt * (this.state === "decree" ? 0.4 : 0)); return; }
       dt = Math.min(dt, 0.05); this.accum += dt;
       while (this.accum >= 1 / 60) {
         this.accum -= 1 / 60; this.t += 1 / 60;
+        if (this.junkQ.length && this.state !== "over" && this.junkQ[0] <= this.t) { this.junkQ.shift(); this.spawnJunk(); }
         if (this.state !== "over") this.stepAbilities(1 / 60);
         Engine.update(this.engine, 1000 / 60);
         if (this.state !== "over") { this.process(); this.checkDanger(1 / 60); }
         if (this.state === "over") this.pairs.length = 0;
       }
       this.heldAnim = Math.min(1, this.heldAnim + dt * 4);
+      for (const o of this.orbs.slice()) { if (o.orb.junk && this.t - o.orb.born > BD.JUNK_LIFE) { this.burst(o.position.x, o.position.y, ["#d8ccd6", "#b8aab6", "#fff"], 9, 150); this.killOrb(o); } }
       for (const o of this.orbs) { if (o.orb.pop > 0) o.orb.pop = Math.max(0, o.orb.pop - dt * 3.2); }
       this.tickFx(dt);
     }
@@ -271,7 +283,7 @@
     gameOver() {
       if (this.state === "over") return;
       this.state = "over"; this.engine.gravity.y = 1; BD.sfx.over(); this.shake = 10;
-      this.orbs.forEach(o => this.burst(o.position.x, o.position.y, [T[o.orb.tier - 1].c[1]], 3, 120));
+      this.orbs.forEach(o => this.burst(o.position.x, o.position.y, [o.orb.tier ? T[o.orb.tier - 1].c[1] : "#b8aab6"], 3, 120));
       this.say("over");
       this.overAt = this.t;
       if (this.hooks.over) this.hooks.over({ score: this.score, maxTier: this.maxTier, bestCombo: this.bestCombo, merges: this.merges });
@@ -344,8 +356,9 @@
         let sc = 1; if (o.orb.pop > 0) { const k = o.orb.pop; sc = 1 + Math.sin(k * Math.PI) * 0.16 - (k > 0.7 ? (k - 0.7) * 0.6 : 0); }
         // soft contact shadow
         c.fillStyle = "rgba(60,25,40,.16)"; c.beginPath(); c.arc(p.x + 2, p.y + 4, r * sc, 0, TAU); c.fill();
-        const spr = BD.art.orb(o.orb.tier, r * 2 * px * 1.0);
-        c.save(); c.translate(p.x, p.y); c.rotate(o.angle); c.drawImage(spr, -r * sc, -r * sc, r * 2 * sc, r * 2 * sc);
+        const spr = o.orb.tier ? BD.art.orb(o.orb.tier, r * 2 * px * 1.0) : BD.art.stone(r * 2 * px);
+        const left = o.orb.junk ? BD.JUNK_LIFE - (this.t - o.orb.born) : 99;
+        c.save(); c.translate(p.x, p.y); c.rotate(o.angle); if (left < 2) c.globalAlpha = 0.45 + 0.4 * Math.sin(left * 14); c.drawImage(spr, -r * sc, -r * sc, r * 2 * sc, r * 2 * sc);
         if (o.orb.overT > 0.25) { c.globalAlpha = Math.min(0.5, o.orb.overT * 0.3); c.fillStyle = "#ff3b4f"; c.beginPath(); c.arc(0, 0, r * sc, 0, TAU); c.fill(); }
         c.restore();
       }

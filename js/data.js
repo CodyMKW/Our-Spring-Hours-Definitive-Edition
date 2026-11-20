@@ -57,5 +57,5 @@ window.VN_DATA = (function () {
   /* Music moods used by the procedural score (js/audio.js). */
   const MOODS = ["spring", "night", "festival", "tense", "ruin", "sorrow", "hope", "battle", "quiet"];
 
-  return { CHARACTERS, BACKGROUNDS, BG_DIR, MOODS, VERSION: "1.2.0" };
+  return { CHARACTERS, BACKGROUNDS, BG_DIR, MOODS, VERSION: "1.3.0" };
 })();

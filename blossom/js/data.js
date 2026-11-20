@@ -32,6 +32,8 @@ window.BD = window.BD || {};
     { name: "Cherry Tree", r: 108, pts: 55,  c: ["#ffe6ef", "#ff9fc0", "#c9567f"] },
   ];
   BD.MAX_TIER = BD.TIERS.length;       // tiers are 1-based in game logic
+  BD.JUNK_R = 26;                      // multiplayer "stone" orbs (tier 0, never merge)
+  BD.JUNK_LIFE = 12;                   // seconds before a stone crumbles away
   BD.FULL_BLOOM = 120;                 // points for merging two Cherry Trees
   BD.SPAWN_WEIGHTS = [34, 28, 20, 12, 6];   // tiers 1..5 can be dropped
 

@@ -216,5 +216,26 @@
     return cv;
   }
 
-  BD.art = { orb, icon: orb, paintFrame, shade };
+
+  /* ------------------------------------------------------------ stone (multiplayer garbage) */
+  const stoneCache = {};
+  function stone(px) {
+    px = Math.max(8, Math.round(px)); if (stoneCache[px]) return stoneCache[px];
+    const cv = document.createElement("canvas"); cv.width = cv.height = px; const c = cv.getContext("2d"), R = px / 2;
+    c.translate(R, R); const r = R * 0.94;
+    c.fillStyle = rg(c, -r * 0.3, -r * 0.35, r * 0.1, 0, 0, r, [[0, "#d9ced8"], [0.55, "#9d909c"], [1, "#6d6170"]]);
+    c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill();
+    c.lineWidth = Math.max(1.5, px * 0.03); c.strokeStyle = "rgba(55,40,60,.75)"; c.stroke();
+    c.strokeStyle = "rgba(60,45,66,.45)"; c.lineWidth = Math.max(1, px * 0.022); c.lineCap = "round";
+    c.beginPath(); c.moveTo(r * 0.2, -r * 0.88); c.lineTo(r * 0.05, -r * 0.45); c.lineTo(r * 0.3, -r * 0.2); c.stroke();
+    c.beginPath(); c.moveTo(-r * 0.75, r * 0.35); c.lineTo(-r * 0.45, r * 0.38); c.lineTo(-r * 0.38, r * 0.62); c.stroke();
+    // sleepy face
+    c.strokeStyle = "rgba(45,30,52,.85)"; c.lineWidth = Math.max(1.6, px * 0.04);
+    c.beginPath(); c.arc(-r * 0.3, -r * 0.02, r * 0.13, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
+    c.beginPath(); c.arc(r * 0.3, -r * 0.02, r * 0.13, 0.15 * Math.PI, 0.85 * Math.PI); c.stroke();
+    c.beginPath(); c.arc(0, r * 0.28, r * 0.09, 0, TAU); c.stroke();
+    c.fillStyle = "rgba(255,255,255,.5)"; ell(c, -r * 0.42, -r * 0.5, r * 0.28, r * 0.14, -0.6); c.fill();
+    return (stoneCache[px] = cv);
+  }
+  BD.art = { orb, icon: orb, paintFrame, shade, stone };
 })(window.BD);
