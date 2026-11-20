@@ -210,3 +210,7 @@ kbd { font: 700 11px var(--font); background: rgba(255, 255, 255, .16); border: 
 .detail-portrait img.face { width: 82%; height: 82%; max-height: none; object-fit: contain; object-position: 50% 100%; }
 .who-portrait img.face { width: 82%; height: 82%; max-height: none; object-fit: contain; object-position: 50% 100%; }
 .pick.sel small, .pick:hover small { color: rgba(255, 255, 255, .85); }
+
+/* nudge Joseph & Falcon up (scale from the top so the bust's bottom edge stays covered) */
+img.face[data-ch="joseph"], img.face[data-ch="falcon"] { transform-origin: 50% 0; transform: translateY(-9%) scale(1.12); }
+.pick .pp img.face[data-ch="joseph"], .pick .pp img.face[data-ch="falcon"] { transform: translateY(-10%) scale(1.14); }
