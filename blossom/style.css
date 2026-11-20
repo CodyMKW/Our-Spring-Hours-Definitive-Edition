@@ -205,7 +205,8 @@ kbd { font: 700 11px var(--font); background: rgba(255, 255, 255, .16); border: 
 }
 @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
 
-/* Mii-style face busts fill their frames instead of being cropped by the full-body scaling */
-.pick .pp img.face { width: 100%; height: 100%; max-height: none; object-fit: cover; object-position: 50% 30%; transform: none; }
-.detail-portrait img.face { width: 100%; height: 100%; max-height: none; object-fit: cover; object-position: 50% 28%; }
-.who-portrait img.face { width: 100%; height: 100%; max-height: none; object-fit: contain; object-position: 50% 100%; }
+/* Mii-style busts: contained with breathing room so the whole head is visible */
+.pick .pp img.face { width: 84%; height: 84%; max-height: none; object-fit: contain; object-position: 50% 100%; transform: translateY(2%); }
+.detail-portrait img.face { width: 82%; height: 82%; max-height: none; object-fit: contain; object-position: 50% 100%; }
+.who-portrait img.face { width: 82%; height: 82%; max-height: none; object-fit: contain; object-position: 50% 100%; }
+.pick.sel small, .pick:hover small { color: rgba(255, 255, 255, .85); }
