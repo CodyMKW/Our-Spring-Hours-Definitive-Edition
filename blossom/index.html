@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Blossom Drop — Our Spring Hours</title>
+<meta name="description" content="A physics merge puzzle starring the cast of Our Spring Hours. Drop, merge, grow a cherry tree.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="backdrop"><div id="bdA"></div><div id="bdB"></div></div>
+<canvas id="petals" aria-hidden="true"></canvas>
+
+<main id="app" data-screen="menu">
+
+  <!-- ============================ MENU ============================ -->
+  <section id="menu" class="screen">
+    <header class="logo">
+      <p class="eyebrow">an <em>Our Spring Hours</em> game</p>
+      <h1>Blossom <span>Drop</span></h1>
+      <p class="tagline">Drop. Merge. Grow a cherry tree.</p>
+    </header>
+
+    <div class="menu-body">
+      <div class="picker" id="picker" role="listbox" aria-label="Choose your character"></div>
+
+      <aside class="detail" id="detail">
+        <div class="detail-portrait" id="dPortrait"></div>
+        <div class="detail-text">
+          <h2 id="dName"></h2>
+          <p class="dtag" id="dTag"></p>
+          <div class="ability">
+            <span class="ab-icon" id="dIcon"></span>
+            <div><b id="dAbName"></b><p id="dAbDesc"></p></div>
+          </div>
+          <ul class="conds" id="dConds"></ul>
+          <p class="best" id="dBest"></p>
+          <button id="playBtn" class="cta"><span>Play</span></button>
+        </div>
+      </aside>
+    </div>
+
+    <footer class="menu-foot">
+      <a class="ghost" href="../index.html">&larr; Back to the Visual Novel</a>
+      <button class="ghost" id="howBtn" type="button">How to play</button>
+      <button class="ghost" id="muteBtn" type="button" aria-label="Toggle sound">Sound: on</button>
+    </footer>
+  </section>
+
+  <!-- ============================ GAME ============================ -->
+  <section id="play" class="screen" hidden>
+    <aside class="side left" id="left">
+      <div class="who card">
+        <div class="who-portrait"><img id="pImg" alt=""><div class="bubble" id="bubble"></div></div>
+        <div class="who-name" id="pName"></div>
+      </div>
+      <button class="ability-btn card" id="abBtn" type="button">
+        <span class="ring" id="abRing"><span class="ab-glyph" id="abGlyph"></span></span>
+        <span class="ab-txt"><b id="abName"></b><small id="abHint">Charging…</small></span>
+        <kbd>Q</kbd>
+      </button>
+      <div class="mini-actions">
+        <button class="icon-btn" id="pauseBtn" type="button" aria-label="Pause">&#10074;&#10074;</button>
+      </div>
+    </aside>
+
+    <div class="stage" id="stage">
+      <div class="topbar">
+        <div class="stat"><small>Score</small><b id="mScore">0</b></div>
+        <div class="stat next"><small>Next</small><div class="queue" id="mQueue"></div></div>
+        <div class="stat"><small>Best</small><b id="mBest">0</b></div>
+      </div>
+      <canvas id="jar" aria-label="Game board"></canvas>
+      <div class="toasts" id="toasts"></div>
+      <button class="ability-btn card mobile-ab" id="abBtnM" type="button" aria-label="Use ability"><span class="ring" id="abRingM"><span class="ab-glyph" id="abGlyphM"></span></span><span class="ab-txt"><b id="abNameM"></b><small id="abHintM">Charging</small></span></button>
+    </div>
+
+    <aside class="side right" id="right">
+      <div class="card score-card">
+        <small>Score</small><b id="score">0</b>
+        <div class="row"><span>Best <b id="best">0</b></span><span class="chip" id="comboChip">Combo</span></div>
+      </div>
+      <div class="card next-card"><small>Next up</small><div class="queue" id="queue"></div></div>
+      <div class="card chart-card"><small>The chain</small><div class="chart" id="chart"></div></div>
+    </aside>
+  </section>
+
+  <!-- ============================ OVERLAYS ============================ -->
+  <div id="pause" class="overlay" hidden>
+    <div class="modal">
+      <h2>Paused</h2>
+      <button class="cta" id="resumeBtn"><span>Resume</span></button>
+      <button class="btn" id="restartBtn">Restart</button>
+      <button class="btn" id="quitBtn">Change character</button>
+      <button class="btn" id="muteBtn2">Sound: on</button>
+    </div>
+  </div>
+
+  <div id="over" class="overlay" hidden>
+    <div class="modal wide">
+      <p class="eyebrow">Jar overflowed</p>
+      <h2 id="oTitle">Game over</h2>
+      <div class="o-score"><b id="oScore">0</b><span id="oBest"></span></div>
+      <div class="o-grid" id="oStats"></div>
+      <div class="o-unlocks" id="oUnlocks"></div>
+      <div class="o-actions">
+        <button class="cta" id="againBtn"><span>Play again</span></button>
+        <button class="btn" id="changeBtn">Change character</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="decree" class="overlay" hidden>
+    <div class="modal">
+      <h2>Decree</h2>
+      <p class="muted">Choose your next piece.</p>
+      <div class="decree-row" id="decreeRow"></div>
+      <button class="btn" id="decreeCancel">Cancel</button>
+    </div>
+  </div>
+
+  <div id="how" class="overlay" hidden>
+    <div class="modal wide">
+      <h2>How to play</h2>
+      <ul class="howto">
+        <li><b>Move</b> your mouse (or drag) to aim, <b>click / tap / Space</b> to drop.</li>
+        <li><b>Match two of the same</b> and they merge into the next one in the chain. Chain merges quickly for combo bonuses.</li>
+        <li>Don&rsquo;t let the pile stay above the <b>dotted line</b> &mdash; the jar overflows.</li>
+        <li>Merges charge your character&rsquo;s <b>ability</b>. Press <kbd>Q</kbd> or tap the ability button when it&rsquo;s full.</li>
+        <li>Two <b>Cherry Trees</b> make a Full Bloom for a huge bonus.</li>
+        <li>Finish chapters of the visual novel and hit score goals to <b>unlock more characters</b>.</li>
+      </ul>
+      <div class="chart wide" id="chartHow"></div>
+      <button class="cta" id="howClose"><span>Got it</span></button>
+    </div>
+  </div>
+</main>
+
+<script src="vendor/matter.min.js"></script>
+<script src="../js/core.js"></script>
+<script src="../js/audio.js"></script>
+<script src="js/data.js"></script>
+<script src="js/art.js"></script>
+<script src="js/sfx.js"></script>
+<script src="js/game.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

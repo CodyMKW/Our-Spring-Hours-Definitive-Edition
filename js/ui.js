@@ -99,6 +99,7 @@
       bonusUnlocked()
         ? h("button", { type: "button", class: "btn big bonus", onclick: () => { A.init(); confirmBonus(); } }, h("span", {}, "\u2605 Bonus Story"), h("small", {}, "The Hundredth Petal"))
         : h("button", { type: "button", class: "btn big bonus locked", disabled: true, title: "Finish all three parts to unlock" }, h("span", {}, "\u2605 Bonus Story"), h("small", {}, "Finish all three parts to unlock")),
+      h("button", { type: "button", class: "btn big blossom", onclick: () => { location.href = "blossom/index.html"; } }, h("span", {}, "\u273F Blossom Drop"), h("small", {}, "A merge-and-drop minigame")),
       h("div", { class: "menu-row" },
         btn("Memories", () => openGallery({ from: "title" }), "btn"),
         btn("\u2726 Cards", () => openCards({ from: "title" }), "btn"),

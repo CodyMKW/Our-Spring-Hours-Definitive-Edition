@@ -99,6 +99,32 @@ Part II starts with Part I stats × 0.5, Part III with × 0.6 (all flags carry; 
 - **Save carry file** (ending screen, Parts I–II): downloads a small JSON of your finished state, already converted for the next part. Import it from *Load → Import* on another browser/device (or later) to start Part II/III from that exact history without replaying.
 - **Keepsake card** (every ending): a collectible trading-card PNG — ending art, your cast, bond bars, closest bond, endings found. Rarity follows the ending: True = holographic gold, Good = silver, Neutral = bronze, Bad = ashen. Part III greys out anyone you lost. From the title screen, **✦ Cards** lists the cards for every chapter you've finished on this device, and can also build a card from a carry file, an exported bundle, or an original Gemini save (older files only hold next-part-scaled stats, so those are scaled back up approximately). PNG download needs the game hosted (browsers block canvas export on `file://`); locally it still displays.
 
+## Blossom Drop (minigame)
+
+Open from the title screen (**✿ Blossom Drop**) or directly at `blossom/index.html`. A Suika-style merge game: drop orbs into the planter, match two of the same tier to grow them through 10 tiers (Petal → Bud → Blossom → Dango → Onigiri → Tomato → Lantern → Wish Charm → Moon → Cherry Tree). Chain merges within ~1.15s for a combo multiplier. If an orb stays above the dashed line too long, the jar overflows.
+
+Each VN character is a playable piece with a unique ability, charged by merging (meter starts at 40/100):
+
+| Character | Ability | Unlock |
+|---|---|---|
+| Cody | Rally — merge best matching pair | Start |
+| Uraraka | Zero Gravity | Start |
+| Joseph | Shake It Up | Start |
+| Falcon | Falcon Punch | Finish Part I + score 2,500 |
+| Cementoss | Stone Shelf | Finish Part I + grow a Tomato |
+| Maki | Cleansing Fire | Finish Part II + score 6,000 |
+| Light | Decree (see next 4, pick) | Finish Part III + grow a Moon |
+| Shigaraki | Decay | Spare Shigaraki in Part II + 4-chain combo |
+| All For One | Absorb | Finish the Bonus story + grow a Cherry Tree |
+
+**Controls:** mouse/touch to aim and release; `←/→` or `A/D` move, `Space/↓/Enter` drop, `Q/E/↑/W` ability, `Esc/P` pause, `R` restart, `1–5` in the Decree picker.
+
+**Files:** `blossom/{index.html, style.css, vendor/matter.min.js (MIT, see matter.LICENSE), js/data.js, art.js, sfx.js, game.js, ui.js}`. All art is drawn procedurally on canvas and all sound is synthesized — no image/audio files. Physics: Matter.js 0.19.
+
+**Saves:** `localStorage["osh-de:blossom"]` = `{games, best, maxTier, bestCombo, merges, perChar, lastChar, seenUnlocked}`. VN progress is read from `osh-de:global`, so the VN and `blossom/` must be served from the same origin/folder for unlocks to track. `blossom/index.html?unlock=all` unlocks everyone for testing.
+
+Tests: `node tools/bltest.js` (smoke), `bltest2.js` (all abilities), `bltest3.js` (game over + mobile).
+
 ## Saves
 
 localStorage prefix `osh-de:`. A save is `{label, idx}` + JSON state (stats, flags, deaths, history, scene). 12 manual slots + autosave. Export/import bundles are JSON; legacy Gemini-version saves can be imported from the Load screen.
