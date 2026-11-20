@@ -208,9 +208,9 @@ kbd { font: 700 11px var(--font); background: rgba(255, 255, 255, .16); border: 
 /* Mii-style busts: contained with breathing room so the whole head is visible */
 .pick .pp img.face { width: 84%; height: 84%; max-height: none; object-fit: contain; object-position: 50% 100%; transform: translateY(2%); }
 .detail-portrait img.face { width: 82%; height: 82%; max-height: none; object-fit: contain; object-position: 50% 100%; }
-.who-portrait img.face { width: 82%; height: 82%; max-height: none; object-fit: contain; object-position: 50% 100%; }
+.who-portrait img.face { position: absolute; left: 6%; right: 6%; bottom: 0; top: 14%; width: 88%; height: 86%; max-height: none; object-fit: contain; object-position: 50% 100%; }
 .pick.sel small, .pick:hover small { color: rgba(255, 255, 255, .85); }
 
 /* nudge Joseph & Falcon up (scale from the top so the bust's bottom edge stays covered) */
-img.face[data-ch="joseph"], img.face[data-ch="falcon"] { transform-origin: 50% 0; transform: translateY(-9%) scale(1.12); }
+.detail-portrait img.face[data-ch="joseph"], .detail-portrait img.face[data-ch="falcon"] { transform-origin: 50% 0; transform: translateY(-2%) scale(1.04); }
 .pick .pp img.face[data-ch="joseph"], .pick .pp img.face[data-ch="falcon"] { transform: translateY(-10%) scale(1.14); }
