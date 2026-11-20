@@ -37,13 +37,14 @@ const ok = (c, m) => console.log((c ? "PASS " : "FAIL ") + m);
   const before = await B.evaluate(() => BD.vs.match.incoming.reduce((a, x) => a + x.n, 0));
   await B.evaluate(() => BD.vs.game.hooks.merged({ nt: 7, combo: 2, full: false }));
   const after = await B.evaluate(() => BD.vs.match.incoming.reduce((a, x) => a + x.n, 0)); ok(after < before, `counter cancels incoming (${before} -> ${after})`);
+  await B.evaluate(() => { BD.vs.game.hooks.merged = () => {}; });   // stop organic merges cancelling the rest
   await B.screenshot({ path: "/tmp/mp_incoming.png" });
   await B.waitForFunction(() => BD.vs.game.orbs.some(o => o.orb.junk), null, { timeout: 6000 }).then(() => ok(true, "stones landed in B's jar"), () => ok(false, "stones landed in B's jar"));
   await A.waitForTimeout(800); await A.screenshot({ path: "/tmp/mp_play_A.png" }); await B.screenshot({ path: "/tmp/mp_play_B.png" });
   // overflow B
-  await B.evaluate(() => { const g = BD.vs.game; for (let i = 0; i < 40; i++) g.makeOrb([2, 4, 6, 8][i % 4], 60 + (i * 97) % 320, -10 - i * 4, 0, 0); });
+  await B.evaluate(() => { const g = BD.vs.game; g.hooks.merged = () => {}; for (let i = 0; i < 40; i++) g.makeOrb([2, 4, 6, 8][i % 4], 60 + (i * 97) % 320, -10 - i * 4, 0, 0); });
   await B.waitForFunction(() => BD.vs.phase === "result", null, { timeout: 25000 }); await A.waitForFunction(() => BD.vs.phase === "result", null, { timeout: 8000 });
-  ok((await B.textContent("#rTitle")) === "You lose", "B sees 'You lose'"); ok((await A.textContent("#rTitle")) === "You win!", "A sees 'You win!'");
+  console.log("B:", await B.textContent("#rTitle"), await B.textContent("#rWhy"), "A:", await A.textContent("#rTitle"), await A.textContent("#rWhy"), await A.evaluate(() => JSON.stringify({o: BD.vs.game.orbs.length, st: BD.vs.game.state, sc: BD.vs.game.score, junk: BD.vs.game.orbs.filter(o=>o.orb.junk).length}))); ok((await B.textContent("#rTitle")) === "You lose", "B sees 'You lose'"); ok((await A.textContent("#rTitle")) === "You win!", "A sees 'You win!'");
   ok((await A.textContent("#rWhy")).includes("Kenji"), "result reason names the rival: " + await A.textContent("#rWhy"));
   await A.screenshot({ path: "/tmp/mp_result.png" });
   // rematch

@@ -31,7 +31,7 @@
   const FACE = { cody: 1, joseph: 1, falcon: 1 };
   const MUSIC = { cody: "spring", uraraka: "spring", joseph: "festival", falcon: "festival", cementoss: "hope", maki: "festival", light: "night", shigaraki: "tense", allforone: "tense" };
 
-  const MATCH_SECONDS = 150, COUNTDOWN_MS = 3300, SNAP_MS = 100, STONE_DELAY_MS = 2600, DEAD_AIR_MS = 9000;
+  const MATCH_SECONDS = 150, COUNTDOWN_MS = 3300, SNAP_MS = 100, STONE_DELAY_MS = 2600, DEAD_AIR_MS = 9000, MAX_PENDING = 12;
 
   /* ------------------------------------------------------------ profile (name + record) */
   const PKEY = "osh-de:blossom-vs";
@@ -213,7 +213,7 @@
       }
       case "start": if (role === "guest" && phase !== "count" && phase !== "play") beginMatch(m.seed >>> 0, Math.max(30, Math.min(600, +m.dur || MATCH_SECONDS))); break;
       case "snap": if (M && mirror) { mirror.apply(m); if (isFinite(m.sc)) M.oppScore = m.sc | 0; M.oppMeter = +m.mt || 0; } break;
-      case "atk": if (M && (phase === "play" || phase === "count") && !M.myOver) { const n = Math.max(1, Math.min(12, m.n | 0)); M.incoming.push({ n, at: performance.now() + STONE_DELAY_MS }); sentFlash = performance.now(); $("oSent").textContent = `${opp.name} sent ${n} stone${n > 1 ? "s" : ""}!`; BD.sfx.warn(); } break;
+      case "atk": if (M && (phase === "play" || phase === "count") && !M.myOver) { const pending = M.incoming.reduce((a, b) => a + b.n, 0), n = Math.min(Math.max(1, Math.min(12, m.n | 0)), MAX_PENDING - pending); if (n > 0) { M.incoming.push({ n, at: performance.now() + STONE_DELAY_MS }); sentFlash = performance.now(); $("oSent").textContent = `${opp.name} sent ${n} stone${n > 1 ? "s" : ""}!`; BD.sfx.warn(); } } break;
       case "over": if (M && phase === "play") { M.oppOver = true; if (isFinite(m.score)) M.oppScore = m.score | 0; mirror.state = "idle"; if (!M.myOver && game.state !== "over") game.state = "done"; settleSoon(M.myOver ? 0 : 900); } break;
       case "fin": if (M && (phase === "play" || phase === "count")) { M.oppFin = true; if (isFinite(m.score)) M.oppScore = m.score | 0; if (M.myFin) settleSoon(0); } break;
       case "rematch": if (M) { M.rematchOpp = true; if (phase === "result") { $("rNote").textContent = `${opp.name} wants a rematch!`; maybeRematch(); } } break;
@@ -256,7 +256,7 @@
   /* attacks ------------------------------------------------------------- */
   function attackFor(info) {
     let n = 0;
-    if (info.combo >= 2) n += info.combo - 1;                  // x2 → 1 stone, x3 → 2 …
+    if (info.combo >= 2) n += Math.min(info.combo - 1, 4);     // x2 → 1 stone, x3 → 2 … (capped at 4 so long chains can't bury anyone)
     if (info.full) n += 6; else if (info.nt >= 6) n += info.nt - 5;   // Tomato(6)+ → 1 … Cherry Tree(10) → 5
     return Math.min(n, 8);
   }
