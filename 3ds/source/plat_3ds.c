@@ -15,6 +15,7 @@ static Input in; static C2D_TextBuf tbuf, mbuf;
 static bool audio_ok; static float vol_music = 0.7f, vol_sfx = 0.8f;
 static const char *SAVE_DIR = "sdmc:/3ds/OurSpringHours";
 
+static void flush_dead(void);
 struct Img { C2D_SpriteSheet sheet; C2D_Image img; int w, h; };
 
 void plat_log(const char *f, ...) { va_list a; va_start(a, f); char b[256]; vsnprintf(b, sizeof b, f, a); va_end(a); svcOutputDebugString(b, strlen(b)); fprintf(stderr, "%s\n", b); }
