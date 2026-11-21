@@ -19,6 +19,7 @@ jobs:
         run: |
           node 3ds/tools/bundle_story.js
           python3 3ds/tools/build_assets.py 3ds/build/gfx
+          python3 3ds/tools/build_banner.py 3ds/build
       - name: Headless playtest of the story runtime
         run: node 3ds/tools/rt_playtest.js 10
       - uses: actions/upload-artifact@v4
@@ -27,6 +28,8 @@ jobs:
           path: |
             3ds/romfs/story.js
             3ds/build/gfx/*.png
+            3ds/build/banner.png
+            3ds/build/banner.wav
   build:
     needs: assets
     runs-on: ubuntu-latest
@@ -57,9 +60,29 @@ jobs:
           name: OurSpringHours-3dsx
           path: |
             3ds/OurSpringHours.3dsx
+            3ds/OurSpringHours.cia
             3ds/OurSpringHours.smdh
+      - name: Build the installable CIA (HOME menu icon)
+        working-directory: 3ds
+        run: |
+          set -e
+          command -v unzip >/dev/null || (apt-get update -qq && apt-get install -y -qq unzip)
+          mkdir -p tools-dl && cd tools-dl
+          api() { curl -fsSL -H "Authorization: Bearer ${{ github.token }}" "$1"; }
+          MR=$(api "https://api.github.com/repos/3DSGuy/Project_CTR/releases?per_page=40" | grep -o 'https://[^"]*makerom[^"]*ubuntu[^"]*\.zip' | head -1)
+          BT=$(api "https://api.github.com/repos/Steveice10/bannertool/releases" | grep -o 'https://[^"]*bannertool[^"]*\.zip' | head -1)
+          echo "makerom: $MR"; echo "bannertool: $BT"
+          curl -fsSL -o makerom.zip "$MR"; curl -fsSL -o bannertool.zip "$BT"
+          unzip -oq makerom.zip -d mr; unzip -oq bannertool.zip -d bt
+          MAKEROM=$(find mr -type f -name 'makerom*' ! -name '*.zip' ! -name '*.exe' | head -1)
+          BANNERTOOL=$(find bt -type f -path '*linux-x86_64*' -name bannertool | head -1)
+          MAKEROM=$(pwd)/$MAKEROM; BANNERTOOL=$(pwd)/$BANNERTOOL; chmod +x "$MAKEROM" "$BANNERTOOL"; cd ..
+          BPNG=$(find ../assets-dl -name banner.png | head -1); BWAV=$(find ../assets-dl -name banner.wav | head -1)
+          "$BANNERTOOL" makebanner -i "$BPNG" -a "$BWAV" -o banner.bnr
+          "$MAKEROM" -f cia -o OurSpringHours.cia -elf OurSpringHours.elf -rsf app.rsf -icon OurSpringHours.smdh -banner banner.bnr -exefslogo -target t -major 1 -minor 0 -micro 0
+          ls -l OurSpringHours.cia
       - name: Size check
-        run: ls -l 3ds/OurSpringHours.3dsx
+        run: ls -l 3ds/OurSpringHours.3dsx 3ds/OurSpringHours.cia
       - name: Publish to the "3ds-latest" release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
@@ -70,3 +93,4 @@ jobs:
           body: "Automatic build of the 3DS homebrew port. Copy OurSpringHours.3dsx to the `3ds/` folder on your SD card. See 3ds/README.md."
           files: |
             3ds/OurSpringHours.3dsx
+            3ds/OurSpringHours.cia

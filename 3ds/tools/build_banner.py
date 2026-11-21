@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""HOME-menu banner assets for the CIA: banner.png (256x128) + banner.wav (short chime, <= 3 s).
+   usage: python3 3ds/tools/build_banner.py [OUT_DIR]   (default 3ds/build)"""
+import math, os, struct, sys, wave
+from PIL import Image, ImageDraw, ImageFont
+root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(root, "3ds", "build")
+os.makedirs(out, exist_ok=True)
+
+bg = Image.open(os.path.join(root, "assets", "backgrounds", "courtyard_bloom.jpg")).convert("RGB")
+s = max(256 / bg.width, 128 / bg.height); bg = bg.resize((round(bg.width * s), round(bg.height * s)), Image.LANCZOS)
+l, t = (bg.width - 256) // 2, (bg.height - 128) // 2
+img = bg.crop((l, t, l + 256, t + 128)).convert("RGBA")
+shade = Image.new("RGBA", img.size, (30, 10, 40, 110)); img.alpha_composite(shade)
+d = ImageDraw.Draw(img)
+def font(size):
+    for p in ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"):
+        if os.path.exists(p): return ImageFont.truetype(p, size)
+    return ImageFont.load_default()
+def centered(text, y, size, fill):
+    f = font(size); w = d.textlength(text, font=f)
+    d.text(((256 - w) / 2 + 1, y + 1), text, font=f, fill=(0, 0, 0, 170)); d.text(((256 - w) / 2, y), text, font=f, fill=fill)
+centered("Our Spring Hours", 34, 24, (255, 255, 255, 255))
+centered("Definitive Edition + Blossom Drop", 70, 12, (255, 214, 228, 255))
+img.convert("RGB").save(os.path.join(out, "banner.png"))
+
+# 2.4 s chime (C5 E5 G5 C6), mono 16-bit 22050 Hz
+rate = 22050; n = int(rate * 2.4); data = [0.0] * n
+for k, (f, t0) in enumerate(((523.25, 0.0), (659.25, 0.18), (783.99, 0.36), (1046.5, 0.54))):
+    for i in range(int(rate * 1.6)):
+        j = int((t0 * rate)) + i
+        if j >= n: break
+        t = i / rate; env = min(1, t / 0.01) * math.exp(-3.2 * t)
+        data[j] += math.sin(2 * math.pi * f * t) * 0.22 * env
+with wave.open(os.path.join(out, "banner.wav"), "wb") as w:
+    w.setnchannels(1); w.setsampwidth(2); w.setframerate(rate)
+    w.writeframes(b"".join(struct.pack("<h", max(-32767, min(32767, int(v * 32767)))) for v in data))
+print("wrote banner.png + banner.wav to", out)
