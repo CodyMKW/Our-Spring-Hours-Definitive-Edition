@@ -3,9 +3,7 @@
 The whole visual novel (Parts I–III + the bonus chapter *The Hundredth Petal*) and single-player **Blossom Drop**, in one
 `OurSpringHours.3dsx`. Versus mode, keepsake cards and the picture gallery stay web-only for now.
 
-> **Status: first build.** It compiles and links in CI, and the story runtime + both games were exercised on a desktop
-> test build (screenshots, scripted playthroughs). It has **not been run on a real 3DS or in Citra/Azahar yet** — if
-> something misbehaves on hardware, please open an issue with what you saw.
+> **Status:** playable end to end on real 3DS hardware (story, saves, Blossom Drop and audio all confirmed working). Also exercised on a desktop test build.
 
 ## Install
 
@@ -115,7 +113,7 @@ Web saves are not shared with the 3DS (different device), but the file format is
 
 ## Known limits / ideas
 
-- Not yet verified on hardware (see top). Likely first things to tune: load time (the story compiles at boot, shown as "Loading the story…"), frame rate in a full Blossom jar on an Old 3DS.
+- Possible things to tune: load time (the story compiles at boot, shown as "Loading the story…"), frame rate in a full Blossom jar on an Old 3DS.
 - Italics/bold are dropped (system font has none); text is the 3DS system font.
 - Not ported: Versus mode, keepsake cards, gallery pictures, weather variety beyond petals/dust/rain/ash/embers/fireflies.
 - Third-party: QuickJS © Fabrice Bellard & Charlie Gordon (MIT), stb by Sean Barrett, built on devkitPro / libctru / citro2d.
