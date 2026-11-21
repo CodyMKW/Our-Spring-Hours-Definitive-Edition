@@ -99,6 +99,11 @@ Part II starts with Part I stats × 0.5, Part III with × 0.6 (all flags carry; 
 - **Save carry file** (ending screen, Parts I–II): downloads a small JSON of your finished state, already converted for the next part. Import it from *Load → Import* on another browser/device (or later) to start Part II/III from that exact history without replaying.
 - **Keepsake card** (every ending): a collectible trading-card PNG — ending art, your cast, bond bars, closest bond, endings found. Rarity follows the ending: True = holographic gold, Good = silver, Neutral = bronze, Bad = ashen. Part III greys out anyone you lost. From the title screen, **✦ Cards** lists the cards for every chapter you've finished on this device, and can also build a card from a carry file, an exported bundle, or an original Gemini save (older files only hold next-part-scaled stats, so those are scaled back up approximately). PNG download needs the game hosted (browsers block canvas export on `file://`); locally it still displays.
 
+## Nintendo 3DS homebrew port
+
+The visual novel (all parts + bonus) and single-player Blossom Drop also run on a modded 3DS as a `.3dsx`. Download it from the
+[3ds-latest release](../../releases/tag/3ds-latest) and see [`3ds/README.md`](3ds/README.md) for install, controls, build steps and file layout.
+
 ## Blossom Drop (minigame)
 
 Open from the title screen (**✿ Blossom Drop**) or directly at `blossom/index.html`. A Suika-style merge game: drop orbs into the planter, match two of the same tier to grow them through 10 tiers (Petal → Bud → Blossom → Dango → Onigiri → Tomato → Lantern → Wish Charm → Moon → Cherry Tree). Chain merges within ~1.15s for a combo multiplier. If an orb stays above the dashed line too long, the jar overflows.
