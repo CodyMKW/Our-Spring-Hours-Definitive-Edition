@@ -1,6 +1,8 @@
 # Builds the Nintendo 3DS homebrew port (3ds/) into OurSpringHours.3dsx and uploads it as an artifact.
 # Run it from the Actions tab ("Run workflow") or push a change under 3ds/ / assets/.
 name: Build 3DS homebrew
+permissions:
+  contents: write
 on:
   workflow_dispatch:
   push:
@@ -56,3 +58,15 @@ jobs:
           path: |
             3ds/OurSpringHours.3dsx
             3ds/OurSpringHours.smdh
+      - name: Size check
+        run: ls -l 3ds/OurSpringHours.3dsx
+      - name: Publish to the "3ds-latest" release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: 3ds-latest
+          name: 3DS build (latest)
+          prerelease: true
+          body: "Automatic build of the 3DS homebrew port. Copy OurSpringHours.3dsx to the `3ds/` folder on your SD card. See 3ds/README.md."
+          files: |
+            3ds/OurSpringHours.3dsx

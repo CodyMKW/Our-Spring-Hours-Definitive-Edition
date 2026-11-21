@@ -47,7 +47,7 @@ static void report(void) {
 
 bool js_boot(void) {
     rt = JS_NewRuntime(); if (!rt) return false;
-    JS_SetMemoryLimit(rt, 40u << 20); JS_SetMaxStackSize(rt, 512 * 1024);
+    JS_SetMemoryLimit(rt, 28u << 20); JS_SetMaxStackSize(rt, 512 * 1024);
     ctx = JS_NewContext(rt); if (!ctx) return false;
     JSValue g = JS_GetGlobalObject(ctx);
     JS_SetPropertyStr(ctx, g, "__store_get", JS_NewCFunction(ctx, n_get, "__store_get", 1));

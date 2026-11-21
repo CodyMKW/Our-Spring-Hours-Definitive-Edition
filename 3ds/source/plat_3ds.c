@@ -46,7 +46,7 @@ bool plat_frame_begin(void) {
     touchPosition t; hidTouchRead(&t);
     in.touch_down = (d & KEY_TOUCH) != 0; in.touch_up = (u & KEY_TOUCH) != 0; in.touch_held = (h & KEY_TOUCH) != 0;
     if (in.touch_held) { in.dx = in.touch_down ? 0 : t.px - in.tx; in.dy = in.touch_down ? 0 : t.py - in.ty; in.tx = t.px; in.ty = t.py; } else in.dx = in.dy = 0;
-    C3D_FrameBegin(C3D_FRAME_SYNCDRAW); C2D_TextBufClear(tbuf);
+    C3D_FrameBegin(C3D_FRAME_SYNCDRAW); flush_dead(); C2D_TextBufClear(tbuf);
     C2D_TargetClear(tgt[0], C2D_Color32(0, 0, 0, 255)); C2D_TargetClear(tgt[1], C2D_Color32(0, 0, 0, 255));
     cur = 0; C2D_SceneBegin(tgt[0]);
     return true;
@@ -63,7 +63,10 @@ Img *plat_img_load(const char *name) {
     C2D_SpriteSheet s = C2D_SpriteSheetLoad(p); if (!s) return NULL;
     Img *im = calloc(1, sizeof *im); im->sheet = s; im->img = C2D_SpriteSheetGetImage(s, 0); im->w = im->img.subtex->width; im->h = im->img.subtex->height; return im;
 }
-void plat_img_free(Img *im) { if (im) { C2D_SpriteSheetFree(im->sheet); free(im); } }
+/* A sheet can still be referenced by draw calls queued this frame, so freeing is deferred to the next frame start. */
+static Img *dead[32]; static int ndead;
+static void flush_dead(void) { for (int i = 0; i < ndead; i++) { C2D_SpriteSheetFree(dead[i]->sheet); free(dead[i]); } ndead = 0; }
+void plat_img_free(Img *im) { if (!im) return; if (ndead >= 32) { C3D_FrameSync(); flush_dead(); } dead[ndead++] = im; }
 int plat_img_w(const Img *im) { return im->w; }
 int plat_img_h(const Img *im) { return im->h; }
 static void tint_of(C2D_ImageTint *t, uint32_t c) {      /* RGB modulates by darkening toward black, alpha = opacity */
