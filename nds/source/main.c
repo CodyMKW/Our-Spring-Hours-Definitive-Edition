@@ -26,7 +26,18 @@ static void crumb(int k, u16 c) { for (int y = 0; y < 8; y++) for (int x = 0; x 
 static void halt(u16 c) { if (fb) { for (int i = 0; i < 256 * 6; i++) fb[185 * 256 - i] = c | BIT(15); } while (1) swiWaitForVBlank(); }
 void abort(void) { dbg[5]++; halt(RGB15(31, 0, 0)); __builtin_unreachable(); }
 void exit(int code) { dbg[6] = code + 1; halt(RGB15(31, 0, 31)); __builtin_unreachable(); }
+/* The ARM9 default stack is tiny (DTCM); QuickJS recurses deeply, so run everything on a big heap-allocated stack. */
+#define BIGSTACK (320 * 1024)
+static void app_main(void);
+static void run_on_stack(void (*fn)(void), void *top) {
+    asm volatile("mov r4, sp\n\tmov sp, %0\n\tblx %1\n\tmov sp, r4" :: "r"(top), "r"(fn) : "r4", "r0", "r1", "r2", "r3", "r12", "lr", "memory", "cc");
+}
 int main(void) {
+    char *stk = malloc(BIGSTACK); dbg[9] = stk ? 1 : 2;
+    run_on_stack(app_main, stk + BIGSTACK - 64);
+    return 0;
+}
+static void app_main(void) {
     videoSetMode(MODE_5_2D); vramSetBankA(VRAM_A_MAIN_BG);
     fb = bgGetGfxPtr(bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
     for (int i = 0; i < 256 * 192; i++) fb[i] = RGB15(2, 2, 6) | BIT(15);
