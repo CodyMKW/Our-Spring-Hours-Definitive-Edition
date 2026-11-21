@@ -20,11 +20,10 @@ bool plat_asset_read(const char *name, char **data, size_t *len) {
 }
 static void mem(const char *tag) { struct mallinfo m = mallinfo(); printf("%s: used %dK\n", tag, m.uordblks / 1024); }
 int main(void) {
-    consoleDemoInit(); videoSetModeSub(MODE_0_2D); consoleInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x256, 22, 3, false, true);
-    videoSetMode(MODE_0_2D); vramSetBankA(VRAM_A_MAIN_BG); consoleInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x256, 22, 3, true, true);
+    consoleDemoInit();
     bool ok = nitroFSInit(NULL); printf("nitroFS %d\n", ok); mem("start");
     timerStart(0, ClockDivider_1024, 0, NULL); timerStart(1, ClockDivider_1024, 0, NULL);
-    cpuStartTiming(0);
+    printf("booting...\n"); cpuStartTiming(0);
     bool b = js_boot(); u32 t = cpuEndTiming(); printf("js_boot=%d %lu ms\n", b, (unsigned long)(t / 33514));
     mem("after boot");
     char *s = js_str("typeof Flat + ':' + (Flat.title ? Flat.title().length : -1)"); printf("flat: %s\n", s);
