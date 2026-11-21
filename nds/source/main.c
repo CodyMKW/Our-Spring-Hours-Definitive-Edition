@@ -1,5 +1,6 @@
 /* Spike: boot QuickJS + story.js on the DS and report memory/time on the screen. */
 #include <nds.h>
+#include <nds/arm9/exceptions.h>
 #include <filesystem.h>
 #include <malloc.h>
 #include <stdio.h>
@@ -32,7 +33,9 @@ static void app_main(void);
 static void run_on_stack(void (*fn)(void), void *top) {
     asm volatile("mov r4, sp\n\tmov sp, %0\n\tblx %1\n\tmov sp, r4" :: "r"(top), "r"(fn) : "r4", "r0", "r1", "r2", "r3", "r12", "lr", "memory", "cc");
 }
+static void on_exc(void) { dbg[5] = 99; dbg[10] = exceptionRegisters[15]; dbg[11] = exceptionRegisters[14]; dbg[12] = exceptionRegisters[13]; dbg[13] = exceptionRegisters[0]; dbg[14] = exceptionRegisters[1]; dbg[15] = exceptionRegisters[12]; halt(RGB15(31, 0, 0)); }
 int main(void) {
+    setExceptionHandler(on_exc);
     char *stk = malloc(BIGSTACK); dbg[9] = stk ? 1 : 2;
     run_on_stack(app_main, stk + BIGSTACK - 64);
     return 0;
