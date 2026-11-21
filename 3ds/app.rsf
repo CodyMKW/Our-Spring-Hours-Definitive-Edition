@@ -1,10 +1,12 @@
-# makerom spec for the CIA build (install it with FBI / GodMode9). Not used for the .3dsx.
+# makerom spec for the CIA build (install with FBI / GodMode9). Not used for the .3dsx.
+# Modelled on the exheader of known-working homebrew CIAs (Checkpoint): the IO/memory mappings (DSP + VRAM),
+# full SVC list and full file-system access are required for graphics/audio/SD to work from a CIA.
 BasicInfo:
   Title                   : "Our Spring Hours"
   CompanyCode             : "00"
   ProductCode             : "CTR-H-OSHD"
   ContentType             : Application
-  Logo                    : None
+  Logo                    : Homebrew
 
 RomFs:
   RootPath                : romfs
@@ -24,20 +26,37 @@ AccessControlInfo:
   CoreVersion             : 2
   DescVersion             : 2
   ReleaseKernelMajor      : "02"
-  ReleaseKernelMinor      : "33"
+  ReleaseKernelMinor      : "46"
   UseExtSaveData          : false
   FileSystemAccess:
+   - CategorySystemApplication
+   - CategoryHardwareCheck
+   - CategoryFileSystemTool
+   - Debug
+   - TwlCardBackup
+   - TwlNandData
+   - Boss
    - DirectSdmc
+   - Core
+   - CtrNandRo
+   - CtrNandRw
+   - CtrNandRoWrite
+   - CategorySystemSettings
+   - CardBoard
+   - ExportImportIvs
+   - DirectSdmcWrite
+   - SwitchCleanup
+   - SaveDataMove
+   - Shop
+   - Shell
+   - CategoryHomeMenu
+   - SeedDB
+  MemoryType              : Application
+  SystemMode              : 64MB
   IdealProcessor          : 0
   AffinityMask            : 1
   Priority                : 16
   MaxCpu                  : 0x9E
-  MemoryType              : Application
-  SystemMode              : 64MB
-  SystemModeExt           : Legacy
-  CpuSpeed                : 804MHz
-  EnableL2Cache           : true
-  CanAccessCore2          : true
   HandleTableSize         : 0x200
   DisableDebug            : false
   EnableForceDebug        : false
@@ -48,7 +67,16 @@ AccessControlInfo:
   CanShareDeviceMemory    : true
   RunnableOnSleep         : false
   SpecialMemoryArrange    : true
-  ResourceLimitCategory   : Application
+  SystemModeExt           : Legacy
+  CpuSpeed                : 268MHz
+  EnableL2Cache           : false
+  CanAccessCore2          : false
+  IORegisterMapping:
+   - 1ec64000-1ec64fff
+   - 1ff00000-1ff7ffff
+   - 1f000000-1f5fffff:r
+  SystemCallAccess:
+
   ServiceAccessControl:
    - APT:U
    - ac:u
@@ -70,7 +98,6 @@ AccessControlInfo:
    - ir:u
    - ir:USER
    - mic:u
-   - mcu::HWC
    - ndm:u
    - news:s
    - nwm::EXT
@@ -81,62 +108,6 @@ AccessControlInfo:
    - soc:U
    - ssl:C
    - y2r:u
-  SystemCallAccess:
-    ArbitrateAddress: 34
-    Backdoor: 123
-    Break: 60
-    CancelTimer: 28
-    ClearEvent: 25
-    ClearTimer: 29
-    CloseHandle: 35
-    ConnectToPort: 45
-    ControlMemory: 1
-    CreateAddressArbiter: 33
-    CreateEvent: 23
-    CreateMemoryBlock: 30
-    CreateMutex: 19
-    CreateSemaphore: 21
-    CreateThread: 8
-    CreateTimer: 26
-    DuplicateHandle: 39
-    ExitProcess: 3
-    ExitThread: 9
-    GetCurrentProcessorNumber: 17
-    GetHandleInfo: 41
-    GetProcessId: 53
-    GetProcessIdOfThread: 54
-    GetResourceLimit: 56
-    GetResourceLimitCurrentValues: 58
-    GetResourceLimitLimitValues: 57
-    GetSystemInfo: 42
-    GetSystemTick: 40
-    GetThreadContext: 59
-    GetThreadId: 55
-    GetThreadIdealProcessor: 15
-    GetThreadPriority: 11
-    MapMemoryBlock: 31
-    OutputDebugString: 61
-    QueryMemory: 2
-    ReleaseMutex: 20
-    ReleaseSemaphore: 22
-    SendSyncRequest1: 46
-    SendSyncRequest2: 47
-    SendSyncRequest3: 48
-    SendSyncRequest4: 49
-    SendSyncRequest: 50
-    SetThreadPriority: 12
-    SetTimer: 27
-    SignalEvent: 24
-    SleepThread: 10
-    UnmapMemoryBlock: 32
-    WaitSynchronization1: 36
-    WaitSynchronizationN: 37
-    SignalAndWait: 38
-    GetProcessInfo: 43
-    KernelSetState: 124
-    FlushProcessDataCache: 84
-    InvalidateProcessDataCache: 82
-    StoreProcessDataCache: 83
 
 SystemControlInfo:
   SaveDataSize            : 0KB
