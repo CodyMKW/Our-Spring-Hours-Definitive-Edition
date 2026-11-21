@@ -3,7 +3,7 @@
 The whole visual novel (Parts I–III + the bonus chapter *The Hundredth Petal*) and single-player **Blossom Drop**, in one
 `OurSpringHours.3dsx`. Versus mode, keepsake cards and the picture gallery stay web-only for now.
 
-> **Status:** playable end to end on real 3DS hardware (story, saves, Blossom Drop and audio all confirmed working). Also exercised on a desktop test build.
+> **Status:** playable end to end on a real Old 3DS (story, saves, Blossom Drop and audio all confirmed working). Also exercised on a desktop test build.
 
 ## Install
 
