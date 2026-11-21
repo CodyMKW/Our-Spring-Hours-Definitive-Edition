@@ -19,15 +19,21 @@ bool plat_asset_read(const char *name, char **data, size_t *len) {
     fread(*data, 1, n, f); (*data)[n] = 0; fclose(f); *len = n; return true;
 }
 static void mem(const char *tag) { struct mallinfo m = mallinfo(); printf("%s: used %dK\n", tag, m.uordblks / 1024); }
+static u16 *fb;
+static void crumb(int k, u16 c) { for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++) fb[y * 256 + k * 10 + x] = c | BIT(15); }
 int main(void) {
-    consoleDemoInit();
-    bool ok = nitroFSInit(NULL); printf("nitroFS %d\n", ok); mem("start");
-    timerStart(0, ClockDivider_1024, 0, NULL); timerStart(1, ClockDivider_1024, 0, NULL);
-    printf("booting...\n"); cpuStartTiming(0);
-    bool b = js_boot(); u32 t = cpuEndTiming(); printf("js_boot=%d %lu ms\n", b, (unsigned long)(t / 33514));
-    mem("after boot");
-    char *s = js_str("typeof Flat + ':' + (Flat.title ? Flat.title().length : -1)"); printf("flat: %s\n", s);
-    cpuStartTiming(0); s = js_str("Flat.events().length"); t = cpuEndTiming(); printf("events: %s (%lu ms)\n", s, (unsigned long)(t / 33514));
-    mem("end");
+    videoSetMode(MODE_5_2D); vramSetBankA(VRAM_A_MAIN_BG);
+    fb = bgGetGfxPtr(bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
+    for (int i = 0; i < 256 * 192; i++) fb[i] = RGB15(2, 2, 6) | BIT(15);
+    crumb(0, RGB15(31, 31, 31));
+    bool ok = nitroFSInit(NULL); crumb(1, ok ? RGB15(0, 31, 0) : RGB15(31, 0, 0));
+    struct mallinfo m0 = mallinfo(); (void)m0;
+    cpuStartTiming(0);
+    bool b = js_boot(); u32 t = cpuEndTiming(); crumb(2, b ? RGB15(0, 31, 0) : RGB15(31, 0, 0));
+    /* boot time in 1/10 s as a bar of blocks, memory used in 100K units as blocks on row 2 */
+    int tenths = t / 3351400; for (int i = 0; i < tenths && i < 25; i++) crumb(3 + i, RGB15(31, 20, 0));
+    struct mallinfo m = mallinfo(); int used = m.uordblks / 102400; for (int i = 0; i < used && i < 25; i++) { for (int y = 12; y < 20; y++) for (int x = 0; x < 8; x++) fb[y * 256 + i * 10 + x] = RGB15(0, 20, 31) | BIT(15); }
+    char *r = js_str("Flat.events().length + ':' + Flat.title().length"); crumb(1, r[0] ? RGB15(0, 31, 31) : RGB15(31, 0, 31));
+    int n = 0; for (char *q = r; *q && n < 30; q++, n++) { for (int y = 24; y < 32; y++) for (int x = 0; x < 8; x++) fb[y * 256 + n * 9 + x] = ((*q * 7) & 31) << 5 | BIT(15); }
     while (1) swiWaitForVBlank();
 }
