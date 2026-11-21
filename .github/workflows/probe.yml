@@ -6,6 +6,7 @@ jobs:
     container: devkitpro/devkitarm:latest
     steps:
       - run: |
+          set +e
           dkp-pacman -Sy --noconfirm >/dev/null 2>&1
           echo "== pacman"; dkp-pacman -Ss 'banner|makerom|3dstool|bannertool' | head -20
           echo "== makerom releases"; curl -fsSL "https://api.github.com/repos/3DSGuy/Project_CTR/releases?per_page=5" | grep -o '"browser_download_url": *"[^"]*"' | head -20
