@@ -6,9 +6,5 @@ jobs:
     steps:
       - run: |
           set +e
-          for r in Steveice10/FBI FlagBrew/Checkpoint Universal-Team/Universal-Updater devkitPro/3ds-examples; do
-            for b in master main; do
-              L=$(curl -sSL "https://api.github.com/repos/$r/git/trees/$b?recursive=1" | grep -o '"path": *"[^"]*\.rsf"' | head -3)
-              [ -n "$L" ] && { echo "=== $r ($b)"; echo "$L"; break; }
-            done
-          done
+          echo "#### CHECKPOINT"; curl -sSL https://raw.githubusercontent.com/FlagBrew/Checkpoint/master/3ds/assets/app.rsf
+          echo "#### UU"; curl -sSL https://raw.githubusercontent.com/Universal-Team/Universal-Updater/master/app/build-cia.rsf
