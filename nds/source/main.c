@@ -24,7 +24,6 @@ static void crumb(int k, u16 c) { for (int y = 0; y < 8; y++) for (int x = 0; x 
 static void halt(u16 c) { if (fb) { for (int i = 0; i < 256 * 6; i++) fb[191 * 256 - i] = c | BIT(15); } while (1) swiWaitForVBlank(); }
 void abort(void) { halt(RGB15(31, 0, 0)); __builtin_unreachable(); }
 void exit(int code) { halt(RGB15(31, 0, 31)); __builtin_unreachable(); }
-void _exit(int code) { halt(RGB15(31, 15, 0)); __builtin_unreachable(); }
 int main(void) {
     videoSetMode(MODE_5_2D); vramSetBankA(VRAM_A_MAIN_BG);
     fb = bgGetGfxPtr(bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
