@@ -43,4 +43,6 @@ jobs:
           name: DS build (latest)
           prerelease: true
           body: "Automatic build of the Nintendo DS port. Load OurSpringHours.nds in NDSWeb / any DS emulator or flashcart. See nds/README.md."
-          files: nds/OurSpringHours.nds
+          files: |
+            nds/OurSpringHours.nds
+            nds/build/OurSpringHours.elf
