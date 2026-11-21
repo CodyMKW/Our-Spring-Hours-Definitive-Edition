@@ -20,8 +20,8 @@ bool plat_asset_read(const char *name, char **data, size_t *len) {
 }
 static void mem(const char *tag) { struct mallinfo m = mallinfo(); printf("%s: used %dK\n", tag, m.uordblks / 1024); }
 static u16 *fb;
-static void crumb(int k, u16 c) { for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++) fb[y * 256 + k * 10 + x] = c | BIT(15); }
-static void halt(u16 c) { if (fb) { for (int i = 0; i < 256 * 6; i++) fb[191 * 256 - i] = c | BIT(15); } while (1) swiWaitForVBlank(); }
+static void crumb(int k, u16 c) { for (int y = 0; y < 8; y++) for (int x = 0; x < 8; x++) fb[(y + 60) * 256 + k * 10 + x] = c | BIT(15); }
+static void halt(u16 c) { if (fb) { for (int i = 0; i < 256 * 6; i++) fb[185 * 256 - i] = c | BIT(15); } while (1) swiWaitForVBlank(); }
 void abort(void) { halt(RGB15(31, 0, 0)); __builtin_unreachable(); }
 void exit(int code) { halt(RGB15(31, 0, 31)); __builtin_unreachable(); }
 int main(void) {
@@ -35,8 +35,8 @@ int main(void) {
     bool b = js_boot(); u32 t = cpuEndTiming(); crumb(2, b ? RGB15(0, 31, 0) : RGB15(31, 0, 0));
     /* boot time in 1/10 s as a bar of blocks, memory used in 100K units as blocks on row 2 */
     int tenths = t / 3351400; for (int i = 0; i < tenths && i < 25; i++) crumb(3 + i, RGB15(31, 20, 0));
-    struct mallinfo m = mallinfo(); int used = m.uordblks / 102400; for (int i = 0; i < used && i < 25; i++) { for (int y = 12; y < 20; y++) for (int x = 0; x < 8; x++) fb[y * 256 + i * 10 + x] = RGB15(0, 20, 31) | BIT(15); }
+    struct mallinfo m = mallinfo(); int used = m.uordblks / 102400; for (int i = 0; i < used && i < 25; i++) { for (int y = 12; y < 20; y++) for (int x = 0; x < 8; x++) fb[(y + 60) * 256 + i * 10 + x] = RGB15(0, 20, 31) | BIT(15); }
     char *r = js_str("Flat.events().length + ':' + Flat.title().length"); crumb(1, r[0] ? RGB15(0, 31, 31) : RGB15(31, 0, 31));
-    int n = 0; for (char *q = r; *q && n < 30; q++, n++) { for (int y = 24; y < 32; y++) for (int x = 0; x < 8; x++) fb[y * 256 + n * 9 + x] = ((*q * 7) & 31) << 5 | BIT(15); }
+    int n = 0; for (char *q = r; *q && n < 30; q++, n++) { for (int y = 24; y < 32; y++) for (int x = 0; x < 8; x++) fb[(y + 60) * 256 + n * 9 + x] = ((*q * 7) & 31) << 5 | BIT(15); }
     while (1) swiWaitForVBlank();
 }
