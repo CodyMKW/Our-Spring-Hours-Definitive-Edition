@@ -14,6 +14,18 @@ The whole visual novel (Parts I–III + the bonus chapter *The Hundredth Petal*)
 3. Open the Homebrew Launcher and start **Our Spring Hours**. Needs custom firmware + the Homebrew Launcher, nothing else.
 4. Optional: sound needs `SD:/3ds/dspfirm.cdc` (dump it once with *DSP1*). Without it the game is silent but works.
 
+### Optional: install it to the HOME menu (CIA)
+
+The release also contains `OurSpringHours.cia`, a full installable copy of the same app (own HOME menu icon + banner, no Homebrew Launcher needed).
+
+1. Download `OurSpringHours.cia` from the same release and put it anywhere on the SD card.
+2. Open **FBI** (or GodMode9) → *SD* → pick the file → **Install and delete CIA** (or *Install CIA*).
+3. Launch **Our Spring Hours** from the HOME menu. Saves are the same `SD:/3ds/OurSpringHours/` files the `.3dsx` uses, so you can switch between the two freely.
+4. To remove it: HOME menu → Settings → Data Management → Nintendo 3DS → Software, or FBI → *Titles*. Title ID `00040000000F7A01`.
+
+It is the real app, not a forwarder, so updating means installing the newer CIA over it. It's built by `3ds/app.rsf` + `makerom` in CI (banner from `tools/build_banner.py`).
+Sound still needs `SD:/3ds/dspfirm.cdc`.
+
 Saves and settings live in `SD:/3ds/OurSpringHours/` (see *Files*). Delete that folder to reset everything.
 
 ## Controls
@@ -87,6 +99,8 @@ Env hooks (desktop only): `OSH_UNLOCK_ALL=1` unlocks every Blossom character, `O
 3ds/
   Makefile                 devkitARM build (CFLAGS carry the QuickJS switches: -DEMSCRIPTEN -DOSH_NO_TZ)
   icon.png                 48x48 launcher icon
+  app.rsf                  makerom spec for the CIA (title ID, permissions, 1 MB stack)
+  tools/build_banner.py    HOME-menu banner.png + banner.wav for the CIA
   js/shim.js               tiny "browser": window, localStorage -> files, console
   js/rt.js                 headless story runtime (same interpreter as js/engine.js, synchronous, event queue)
   js/flat.js               string facade over rt.js so C never parses JSON (records \x1e, fields \x1f, lists \x1d)
