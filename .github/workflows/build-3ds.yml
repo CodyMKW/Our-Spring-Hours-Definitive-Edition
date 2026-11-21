@@ -68,7 +68,7 @@ jobs:
           set -e
           command -v unzip >/dev/null || (apt-get update -qq && apt-get install -y -qq unzip)
           mkdir -p tools-dl && cd tools-dl
-          curl -fsSL -o makerom.zip "https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.19.0/makerom-v0.19.0-ubuntu_x86_64.zip"
+          curl -fsSL -o makerom.zip "https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.18.4/makerom-v0.18.4-ubuntu_x86_64.zip"
           curl -fsSL -o bannertool.zip "https://github.com/diasurgical/bannertool/releases/download/1.2.0/bannertool.zip"
           unzip -oq makerom.zip -d mr; unzip -oq bannertool.zip -d bt
           MAKEROM=$(find mr -type f -name 'makerom*' ! -name '*.zip' ! -name '*.exe' | head -1)
