@@ -120,6 +120,7 @@ static void draw_stage(float t) {
         float lift = sp ? -3 + sinf(t * 3) * 1.2f : 0;
         uint32_t tint = (V.speaker[0] && !sp) ? RGB(150, 150, 165) : RGB(255, 255, 255);
         float w = plat_img_w(im) * sc;
+        plat_circle(X[n][i] + shx, 236 + shy, w * 0.42f, RGBA(10, 4, 20, 40));
         plat_img_draw(im, X[n][i] - w / 2 + shx, 242 - hh + lift + shy, sc, sc, 0, tint);
     }
 }
@@ -127,14 +128,16 @@ static void draw_top(float t) {
     plat_target(0);
     if (V.shake > 0) { shx = sinf(t * 90) * 6 * V.shake * 2; shy = cosf(t * 77) * 4 * V.shake * 2; } else shx = shy = 0;
     draw_bg(); draw_weather(t);
-    if (!V.card && !V.ending) draw_stage(t);
+    if (!V.card && !V.ending) { draw_stage(t); ui_fade_edges(); }
     if (V.pulse_t > 0) { uint32_t c = V.pulse_col; float a = V.pulse_t / 0.9f; for (int i = 0; i < 6; i++) plat_rect(0, i * 5, 400, 5, col_alpha(c, a * (1 - i / 6.0f) * 0.7f)), plat_rect(0, 240 - (i + 1) * 5, 400, 5, col_alpha(c, a * (1 - i / 6.0f) * 0.7f)); }
     if (V.flash_t > 0) plat_rect(0, 0, 400, 240, col_alpha(V.flash_col, V.flash_t / 0.6f));
     if (V.b_t > 0) {
         float a = V.b_t > 0.6f ? 1 : V.b_t / 0.6f; if (V.b_t > 2.8f) a = (3.2f - V.b_t) / 0.4f;
-        plat_rect(0, 80, 400, 76, RGBA(20, 8, 28, (int)(170 * a)));
-        plat_text(200, 90, 26, col_alpha(RGB(255, 255, 255), a), T_CENTER | T_SHADOW, V.b_title);
-        plat_text(200, 124, 14, col_alpha(RGB(255, 220, 232), a), T_CENTER | T_SHADOW, V.b_sub);
+        plat_rect_grad(0, 70, 400, 96, RGBA(20, 8, 28, 0), RGBA(20, 8, 28, (int)(190 * a)));
+        plat_rect(60, 88, 280, 1, col_alpha(RGB(255, 190, 210), a)); plat_rect(60, 150, 280, 1, col_alpha(RGB(255, 190, 210), a));
+        ui_petal(200, 84, 5, t * 1.2f, col_alpha(RGB(255, 184, 206), a)); ui_petal(200, 154, 5, -t * 1.2f, col_alpha(RGB(255, 184, 206), a));
+        plat_text(200, 96, 26, col_alpha(RGB(255, 255, 255), a), T_CENTER | T_SHADOW, V.b_title);
+        plat_text(200, 128, 14, col_alpha(RGB(255, 220, 232), a), T_CENTER | T_SHADOW, V.b_sub);
     }
     if (V.card) {
         plat_rect_grad(0, 0, 400, 240, RGB(30, 14, 40), RGB(70, 30, 70));
@@ -142,22 +145,22 @@ static void draw_top(float t) {
         plat_text(200, 82, 30, RGB(255, 255, 255), T_CENTER | T_SHADOW, V.c_title);
         ui_text_box(40, 130, 320, 15, RGB(255, 230, 240), V.c_sub, 4);
     }
-    if (V.toast_t > 0) { float w = plat_text_w(14, V.toast) + 24; plat_rrect(200 - w / 2, 8, w, 26, 8, RGBA(20, 8, 28, 200)); plat_text(200, 12, 14, RGB(255, 235, 245), T_CENTER, V.toast); }
+    if (V.toast_t > 0) { float w = plat_text_w(14, V.toast) + 24; ui_card(200 - w / 2, 8, w, 26, 13, RGBA(20, 8, 28, 215)); plat_text(200, 12, 14, RGB(255, 235, 245), T_CENTER, V.toast); }
 }
 
 /* ---- drawing: bottom screen */
 static void draw_buttons(int focus) {
     static const char *L[5] = { "Auto", "Skip", "Log", "Save", "Menu" };
     for (int i = 0; i < 5; i++) {
-        bool on = (i == 0 && V.auto_) || (i == 1 && V.skip);
-        plat_rrect(8 + i * 61, 206, 58, 26, 6, on ? RGB(255, 143, 180) : RGBA(255, 255, 255, 46));
-        plat_text(8 + i * 61 + 29, 210, 15, on ? RGB(60, 20, 40) : RGB(255, 235, 245), T_CENTER, L[i]);
+        bool on = (i == 0 && V.auto_) || (i == 1 && V.skip); float x = 8 + i * 61;
+        ui_card(x, 206, 58, 26, 13, on ? RGB(255, 143, 180) : RGBA(255, 255, 255, 40));
+        plat_text(x + 29, 210, 15, on ? RGB(70, 20, 44) : RGB(255, 235, 245), T_CENTER, L[i]);
         (void)focus;
     }
 }
 static void draw_bottom(float t) {
     plat_target(1);
-    plat_rect_grad(0, 0, 320, 240, RGB(62, 34, 74), RGB(34, 18, 48));
+    ui_bg_bottom(t);
     if (V.hide_ui) return;
     if (V.nopts) {
         plat_text(160, 4, 13, RGB(255, 200, 220), T_CENTER, "What do you do?");
@@ -165,8 +168,8 @@ static void draw_bottom(float t) {
         for (int i = 0; i < V.nopts; i++) {
             int st[8], en[8]; int nl = text_wrap(size, 284, V.opts[i], st, en, 4); float h = nl * (size + 2) + 10;
             bool f = i == V.msel;
-            plat_rrect(8, y, 304, h, 7, f ? RGB(255, 236, 242) : RGB(255, 247, 250));
-            if (f) plat_rrect_line(8, y, 304, h, 7, RGB(255, 120, 165));
+            ui_card(8, y, 304, h, 10, f ? RGB(255, 240, 246) : RGB(250, 232, 242));
+            if (f) { plat_rrect_line(8, y, 304, h, 10, RGB(255, 120, 165)); ui_petal(300, y + h / 2, 5, t * 2, RGB(255, 143, 180)); }
             char b[260];
             for (int k = 0; k < nl; k++) { int l = en[k] - st[k]; memcpy(b, V.opts[i] + st[k], l); b[l] = 0; plat_text(18, y + 5 + k * (size + 2), size, RGB(80, 40, 64), 0, b); }
             y += h + 6;
@@ -179,8 +182,10 @@ static void draw_bottom(float t) {
         return;
     }
     if (V.has_line) {
-        if (V.say) { float w = plat_text_w(16, V.name) + 22; plat_rrect(10, 4, w, 22, 8, V.color); plat_text(21, 5, 16, RGB(255, 255, 255), T_SHADOW, V.name); }
-        ui_panel(8, 28, 304, 170, RGBA(14, 6, 22, 175));
+        ui_card(8, 30, 304, 168, 12, RGBA(16, 7, 26, 200));
+        plat_rrect_line(8, 30, 304, 168, 12, RGBA(255, 160, 195, 120));
+        if (V.say) { float w = plat_text_w(16, V.name) + 30; ui_card(14, 6, w, 24, 12, V.color); plat_circle(26, 18, 4, RGB(255, 255, 255)); plat_text(36, 7, 16, RGB(255, 255, 255), T_SHADOW, V.name); }
+        else plat_text(18, 8, 13, RGBA(255, 214, 228, 170), 0, "~");
         float size = 15; int st[16], en[16]; int nl = text_wrap(size, 284, V.text, st, en, 16);
         if (nl > 8) { size = 13; nl = text_wrap(size, 284, V.text, st, en, 16); }
         int shown = (int)V.reveal, len = (int)strlen(V.text);
@@ -190,7 +195,7 @@ static void draw_bottom(float t) {
             int e = en[k] < shown ? en[k] : shown; int l = e - st[k]; if (l > 500) l = 500; memcpy(b, V.text + st[k], l); b[l] = 0;
             plat_text(16, 34 + k * (size + 3), size, RGB(255, 250, 252), T_SHADOW, b);
         }
-        if (shown >= len && fmodf(t, 0.9f) < 0.55f) { plat_rect(296, 186, 10, 3, RGB(255, 170, 200)); plat_rect(299, 189, 4, 3, RGB(255, 170, 200)); }
+        if (shown >= len && fmodf(t, 0.9f) < 0.55f) { ui_petal(298, 186 + sinf(t * 6) * 1.5f, 5, t * 2, RGB(255, 170, 200)); }
     }
     draw_buttons(0);
 }

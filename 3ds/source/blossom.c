@@ -275,19 +275,19 @@ static void step(float dt) {
 static float sx(float x) { return JX + x * JS; }
 static float sy(float y) { return JY + y * JS; }
 static void draw_orb(float x, float y, float r, int tier, float ang, float pop) {
-    float s = 1 + pop * 0.25f; r *= s; const uint32_t *c = T[tier - 1].c;
-    plat_circle(x, y, r, c[2]); plat_circle(x, y - r * 0.04f, r * 0.9f, c[1]);
-    plat_circle(x - r * 0.28f, y - r * 0.32f, r * 0.28f, col_alpha(c[0], 0.9f));
-    if (r >= 6.5f) {
-        float ex = r * 0.3f, ey = r * 0.1f, er = fmaxf(1.0f, r * 0.12f), ca = cosf(ang * 0.5f), sa = sinf(ang * 0.5f); (void)ca; (void)sa;
-        plat_circle(x - ex, y + ey, er, RGB(70, 40, 60)); plat_circle(x + ex, y + ey, er, RGB(70, 40, 60));
-        if (r >= 12) { plat_circle(x - ex * 1.5f, y + ey * 2.4f, er * 1.1f, RGBA(255, 120, 150, 120)); plat_circle(x + ex * 1.5f, y + ey * 2.4f, er * 1.1f, RGBA(255, 120, 150, 120)); }
-    }
+    float d = 2 * r * (1 + pop * 0.25f);
+    int px = d <= 36 ? 32 : d <= 72 ? 64 : 128; char nm[24]; snprintf(nm, 24, "orb%d_%d", px, tier);
+    Img *im = img_get(nm);
+    if (im) { float sc = d / px; plat_img_draw(im, x - d / 2, y - d / 2, sc, sc, ang * 0.35f, RGB(255, 255, 255)); return; }
+    const uint32_t *c = T[tier - 1].c; r = d / 2;   /* fallback: flat circles if the pictures are missing */
+    plat_circle(x, y, r, c[2]); plat_circle(x, y - r * 0.04f, r * 0.9f, c[1]); plat_circle(x - r * 0.28f, y - r * 0.32f, r * 0.28f, col_alpha(c[0], 0.9f));
 }
 static void draw_jar(void) {
     float ox = G.shake > 0 ? sinf(G.t * 90) * G.shake * 0.12f : 0;
-    plat_rrect(JX - 3 + ox, JY - 2, JW * JS + 6, JH * JS + 6, 4, RGB(150, 100, 90));
-    plat_rect_grad(JX + ox, JY, JW * JS, JH * JS, RGB(255, 244, 240), RGB(255, 222, 226));
+    ui_card(JX - 5 + ox, JY - 4, JW * JS + 10, JH * JS + 10, 8, RGB(196, 138, 150));
+    ui_card(JX - 3 + ox, JY - 2, JW * JS + 6, JH * JS + 6, 6, RGB(236, 188, 198));
+    plat_rect_grad(JX + ox, JY, JW * JS, JH * JS, RGB(255, 246, 244), RGB(255, 220, 228));
+    plat_rect(JX + 3 + ox, JY, 2, JH * JS, RGBA(255, 255, 255, 120));
     float ly = sy(LINE_Y); float wa = G.warn;
     for (int x = 0; x < (int)(JW * JS); x += 8) plat_rect(JX + x + ox, ly, 4, 1, wa > 0.1f ? RGBA(230, 60, 80, 200) : RGBA(200, 120, 140, 130));
     if (G.shelf) plat_rrect(sx(JW * 0.19f) + ox, sy(JH * 0.46f - 12), JW * 0.62f * JS, 24 * JS, 2, RGB(130, 112, 96));
@@ -307,16 +307,16 @@ static void draw_jar(void) {
 }
 static void draw_panel(void) {
     const Ch *h = &CH[G.ch]; float x0 = 178, w = 136;
-    plat_rrect(x0, 8, w, 46, 7, RGBA(255, 255, 255, 40));
+    ui_card(x0, 8, w, 46, 12, RGBA(255, 255, 255, 46));
     plat_text(x0 + 8, 10, 12, RGB(255, 210, 225), 0, "Score"); char b[40]; snprintf(b, 40, "%d", G.score); plat_text(x0 + 8, 24, 22, RGB(255, 255, 255), T_SHADOW, b);
     plat_text(x0 + w - 6, 12, 12, RGB(255, 210, 225), T_RIGHT, G.combo > 1 ? (snprintf(b, 40, "x%d combo", G.combo), b) : "");
-    plat_rrect(x0, 60, w, 52, 7, RGBA(255, 255, 255, 40)); plat_text(x0 + 8, 62, 12, RGB(255, 210, 225), 0, "Next");
+    ui_card(x0, 60, w, 52, 12, RGBA(255, 255, 255, 46)); plat_text(x0 + 8, 62, 12, RGB(255, 210, 225), 0, "Next");
     for (int i = 0; i < (h->id[0] == 'l' && !strcmp(h->id, "light") ? 4 : 1); i++) { int tr = G.queue[i]; float r = T[tr - 1].r * 0.34f; draw_orb(x0 + 22 + i * 32, 92, r > 17 ? 17 : r, tr, 0, 0); }
     /* ability button */
     float by = 118; bool ready = ability_ready();
-    plat_rrect(x0, by, w, 52, 8, ready ? RGB(255, 236, 242) : RGBA(255, 255, 255, 40));
+    ui_card(x0, by, w, 52, 12, ready ? RGB(255, 236, 242) : RGBA(255, 255, 255, 40));
     plat_text(x0 + w / 2, by + 3, 14, ready ? RGB(110, 40, 80) : RGB(255, 235, 245), T_CENTER, h->ab_name);
-    plat_rect(x0 + 8, by + 24, w - 16, 8, RGBA(0, 0, 0, 80)); plat_rect(x0 + 8, by + 24, (w - 16) * G.meter / 100, 8, ready ? RGB(255, 120, 165) : RGB(190, 140, 220));
+    ui_card(x0 + 8, by + 24, w - 16, 8, 4, RGBA(0, 0, 0, 80)); if (G.meter > 3) ui_card(x0 + 8, by + 24, (w - 16) * G.meter / 100, 8, 4, ready ? RGB(255, 120, 165) : RGB(190, 140, 220));
     plat_text(x0 + w / 2, by + 34, 12, ready ? RGB(110, 40, 80) : RGB(255, 225, 238), T_CENTER, ready ? "TAP or press X!" : "charging...");
     ui_button(x0, 178, 64, 26, "Pause", false, RGB(255, 247, 250), 14);
     plat_text(x0 + 70, 182, 11, RGBA(255, 255, 255, 170), 0, "touch jar: aim,");
@@ -326,15 +326,15 @@ static void draw_panel(void) {
 static void draw_top(Img *portrait) {
     const Ch *h = &CH[G.ch]; char nm[60];
     snprintf(nm, 60, "bg_%s", h->bg); Img *bg = img_get(nm);
-    if (bg) plat_img_draw(bg, 0, 0, 1, 1, 0, RGB(255, 255, 255)); plat_rect(0, 0, 400, 240, RGBA(20, 8, 30, 90));
+    if (bg) plat_img_draw(bg, 0, 0, 1, 1, 0, RGB(255, 255, 255)); plat_rect(0, 0, 400, 240, RGBA(20, 8, 30, 90)); ui_fade_edges();
     if (portrait) { float hh = 210, sc = hh / plat_img_h(portrait); plat_img_draw(portrait, 14, 244 - hh, sc, sc, 0, RGB(255, 255, 255)); }
-    plat_rrect(196, 8, 196, 70, 8, RGBA(20, 8, 30, 170));
+    ui_card(196, 8, 196, 70, 12, RGBA(20, 8, 30, 175));
     plat_text(206, 12, 18, h->color, T_SHADOW, h->name);
     char b[80]; snprintf(b, 80, "Score %d", G.score); plat_text(206, 36, 18, RGB(255, 255, 255), T_SHADOW, b);
     snprintf(b, 80, "Best %d", ST.best > G.score ? ST.best : G.score); plat_text(206, 58, 13, RGB(255, 220, 232), 0, b);
-    if (G.quipT > 0) { float w = plat_text_w(14, G.quip) + 20; if (w > 190) w = 190; plat_rrect(196, 88, 196, 40, 9, RGB(255, 250, 252)); ui_text_box(204, 92, 180, 14, RGB(80, 40, 64), G.quip, 2); }
+    if (G.quipT > 0) { float w = plat_text_w(14, G.quip) + 20; if (w > 190) w = 190; ui_card(196, 88, 196, 40, 14, RGB(255, 250, 252)); ui_text_box(204, 92, 180, 14, RGB(80, 40, 64), G.quip, 2); }
     /* merge chain legend */
-    plat_rrect(150, 150, 244, 80, 8, RGBA(20, 8, 30, 170)); plat_text(158, 152, 11, RGB(255, 210, 225), 0, "Merge chain  (match two to grow)");
+    ui_card(150, 150, 244, 80, 12, RGBA(20, 8, 30, 175)); plat_text(158, 152, 11, RGB(255, 210, 225), 0, "Merge chain  (match two to grow)");
     for (int i = 0; i < NT; i++) { float x = 166 + i * 23, y = 188; float r = 4 + i * 0.95f; draw_orb(x, y - (i > 6 ? 0 : 0), r, i + 1, 0, 0); if (i == G.maxTier - 1) plat_rect(x - 2, y + 15, 4, 3, RGB(255, 230, 140)); }
     plat_text(272, 206, 11, RGBA(255, 255, 255, 190), T_CENTER, "Petal > Bud > Blossom > ... > Cherry Tree");
     plat_text(272, 217, 11, RGBA(255, 255, 255, 140), T_CENTER, G.maxTier ? T[G.maxTier - 1].name : "");
@@ -384,7 +384,7 @@ static void run_game(int ch) {
         }
         (void)decree_pick; (void)decree_tier;
         plat_target(0); draw_top(portrait);
-        plat_target(1); plat_rect_grad(0, 0, 320, 240, RGB(120, 70, 100), RGB(70, 38, 70)); draw_jar(); draw_panel();
+        plat_target(1); ui_bg_bottom(G.t); draw_jar(); draw_panel();
         if (G.state == S_DECAY) { plat_rect(JX, JY + JH * JS - 18, JW * JS, 16, RGBA(20, 8, 30, 190)); plat_text(JX + JW * JS / 2, JY + JH * JS - 17, 12, RGB(255, 255, 255), T_CENTER, "Tap an orb to crumble it"); }
     }
 finish:

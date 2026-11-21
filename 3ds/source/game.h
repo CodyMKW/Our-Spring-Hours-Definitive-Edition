@@ -17,6 +17,10 @@ bool ui_button(float x, float y, float w, float h, const char *label, bool focus
 void ui_text_box(float x, float y, float w, float size, uint32_t col, const char *s, int maxlines);   /* wrapped text */
 /* blocking list menu. details[] (optional) is shown on the top screen for the selected row. Returns index, -1 = cancelled */
 int ui_menu(const char *title, const char *sub, const char **items, const char **details, int n, int start);
+void ui_petal(float x, float y, float r, float rot, uint32_t col);
+void ui_card(float x, float y, float w, float h, float r, uint32_t col);
+void ui_bg_bottom(float t);
+void ui_fade_edges(void);
 Img *img_get(const char *name);                          /* cached load: "bg_hallway", "ch_cody" */
 void img_trim(void);
 extern Img *ui_art;                                      /* optional picture for the top screen of ui_menu */

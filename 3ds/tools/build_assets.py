@@ -3,6 +3,7 @@
    usage: python3 3ds/tools/build_assets.py [OUT_DIR]      (default 3ds/build/gfx)
    backgrounds/*.jpg   -> bg_<name>.png   400x240 (top-screen size, 16:9 cover-crop)
    characters/*.webp   -> ch_<id>.png     height <= 224, keeps alpha
+   3ds/assets/orbs/*   -> copied (orb32_1.png ... orb128_10.png, rendered from the web art by tools/render_orbs.js)
    The CI then runs `tex3ds -f rgba8888 -z auto -o romfs/gfx/NAME.t3x NAME.png` on each."""
 import os, sys
 from PIL import Image
@@ -23,4 +24,9 @@ for f in sorted(os.listdir(os.path.join(root, "assets", "characters"))):
     bb = im.getbbox(); im = im.crop(bb) if bb else im
     s = 224 / im.height; im = im.resize((max(1, round(im.width * s)), 224), Image.LANCZOS)
     im.save(os.path.join(out, "ch_" + f[:-5] + ".png")); n += 1
+import shutil
+od = os.path.join(root, "3ds", "assets", "orbs")
+if os.path.isdir(od):
+    for f in sorted(os.listdir(od)):
+        if f.endswith(".png"): shutil.copy(os.path.join(od, f), os.path.join(out, f)); n += 1
 print("wrote", n, "images to", out)
