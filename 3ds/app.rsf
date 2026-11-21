@@ -131,6 +131,12 @@ AccessControlInfo:
     UnmapMemoryBlock: 32
     WaitSynchronization1: 36
     WaitSynchronizationN: 37
+    SignalAndWait: 38
+    GetProcessInfo: 43
+    KernelSetState: 124
+    FlushProcessDataCache: 84
+    InvalidateProcessDataCache: 82
+    StoreProcessDataCache: 83
 
 SystemControlInfo:
   SaveDataSize            : 0KB

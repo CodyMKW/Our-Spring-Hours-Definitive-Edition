@@ -18,17 +18,27 @@ static const char *SAVE_DIR = "sdmc:/3ds/OurSpringHours";
 static void flush_dead(void);
 struct Img { C2D_SpriteSheet sheet; C2D_Image img; int w, h; };
 
-void plat_log(const char *f, ...) { va_list a; va_start(a, f); char b[256]; vsnprintf(b, sizeof b, f, a); va_end(a); svcOutputDebugString(b, strlen(b)); fprintf(stderr, "%s\n", b); }
+static void bootlog(const char *msg);
+void plat_log(const char *f, ...) { va_list a; va_start(a, f); char b[256]; vsnprintf(b, sizeof b, f, a); va_end(a); svcOutputDebugString(b, strlen(b)); fprintf(stderr, "%s\n", b); bootlog(b); }
 uint64_t plat_time_ms(void) { return osGetTime(); }
 
+/* boot.log: a few progress lines so a crash on launch can be located (SD:/3ds/OurSpringHours/boot.log, rewritten each start) */
+static void bootlog(const char *msg) {
+    static bool first = true; FILE *f = fopen("sdmc:/3ds/OurSpringHours/boot.log", first ? "wb" : "ab"); first = false;
+    if (f) { fprintf(f, "%s\n", msg); fclose(f); }
+}
 bool plat_init(int argc, char **argv) {
     (void)argc; (void)argv;
-    romfsInit(); gfxInitDefault(); C3D_Init(C3D_DEFAULT_CMDBUF_SIZE); C2D_Init(C2D_DEFAULT_MAX_OBJECTS * 2); C2D_Prepare();
+    mkdir("sdmc:/3ds", 0777); mkdir(SAVE_DIR, 0777); bootlog("plat_init: start");
+    Result rr = romfsInit(); { char b[64]; snprintf(b, 64, "romfsInit -> %08lX", (unsigned long)rr); bootlog(b); }
+    gfxInitDefault(); bootlog("gfxInitDefault ok");
+    C3D_Init(C3D_DEFAULT_CMDBUF_SIZE); bootlog("C3D_Init ok"); C2D_Init(C2D_DEFAULT_MAX_OBJECTS * 2); C2D_Prepare(); bootlog("C2D ok");
     tgt[0] = C2D_CreateScreenTarget(GFX_TOP, GFX_LEFT); tgt[1] = C2D_CreateScreenTarget(GFX_BOTTOM, GFX_LEFT);
     tbuf = C2D_TextBufNew(9000); mbuf = C2D_TextBufNew(64);
     mkdir("sdmc:/3ds", 0777); mkdir(SAVE_DIR, 0777);
-    osSetSpeedupEnable(true);
-    if (R_SUCCEEDED(ndspInit())) { audio_ok = true; ndspSetOutputMode(NDSP_OUTPUT_STEREO); }   /* needs dspfirm.cdc on the SD card; fine if absent */
+    { bool n3 = false; APT_CheckNew3DS(&n3); if (n3) osSetSpeedupEnable(true); }   /* only meaningful (and permitted) on a New 3DS */
+    if (R_SUCCEEDED(ndspInit())) { audio_ok = true; ndspSetOutputMode(NDSP_OUTPUT_STEREO); bootlog("ndsp ok"); } else bootlog("ndsp unavailable");
+    bootlog("plat_init: done");   /* needs dspfirm.cdc on the SD card; fine if absent */
     return true;
 }
 void plat_exit(void) {

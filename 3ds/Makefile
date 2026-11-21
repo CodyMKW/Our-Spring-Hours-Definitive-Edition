@@ -20,7 +20,7 @@ ROMFS       := romfs
 APP_TITLE       := Our Spring Hours
 APP_DESCRIPTION := Definitive Edition + Blossom Drop
 APP_AUTHOR      := CodyMKW
-ICON            := icon.png
+APP_ICON        := $(TOPDIR)/icon.png
 
 ARCH    := -march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 CFLAGS  := -g -O2 -ffunction-sections -fno-strict-aliasing -mword-relocations $(ARCH) \
