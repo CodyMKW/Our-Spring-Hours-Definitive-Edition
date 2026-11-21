@@ -150,6 +150,10 @@ bool plat_asset_read(const char *n, char **d, size_t *len) {
 #define NSFX 14
 static struct { const char *name; int16_t *pcm; size_t n; } sfxc[NSFX]; static int nsfxc;
 static ndspWaveBuf mwb, swb[6]; static int16_t *mpcm; static char mname[16]; static int nextch;
+/* ndsp's DSP reads sample data straight from memory, so it MUST live in linear (physically contiguous) memory — plain malloc'd buffers play silence. */
+static int16_t *to_linear(int16_t *src, size_t n) {
+    int16_t *d = linearAlloc(n * sizeof(int16_t)); if (d) memcpy(d, src, n * sizeof(int16_t)); free(src); return d;
+}
 static void play_buf(int ch, ndspWaveBuf *wb, int16_t *pcm, size_t n, bool loop, float vol) {
     ndspChnReset(ch); ndspChnSetInterp(ch, NDSP_INTERP_LINEAR); ndspChnSetRate(ch, SYN_RATE); ndspChnSetFormat(ch, NDSP_FORMAT_MONO_PCM16);
     float mix[12] = { vol, vol }; ndspChnSetMix(ch, mix);
@@ -160,14 +164,14 @@ void plat_sfx(const char *name) {
     if (!audio_ok || vol_sfx <= 0) return;
     int16_t *pcm = NULL; size_t n = 0;
     for (int i = 0; i < nsfxc; i++) if (!strcmp(sfxc[i].name, name)) { pcm = sfxc[i].pcm; n = sfxc[i].n; }
-    if (!pcm) { size_t k; pcm = synth_sfx(name, &k); if (!pcm || nsfxc >= NSFX) { free(pcm); return; } sfxc[nsfxc].name = strdup(name); sfxc[nsfxc].pcm = pcm; sfxc[nsfxc].n = k; nsfxc++; n = k; }
+    if (!pcm) { size_t k; pcm = synth_sfx(name, &k); if (!pcm || nsfxc >= NSFX) { free(pcm); return; } pcm = to_linear(pcm, k); if (!pcm) return; sfxc[nsfxc].name = strdup(name); sfxc[nsfxc].pcm = pcm; sfxc[nsfxc].n = k; nsfxc++; n = k; }
     int ch = 1 + (nextch++ % 6); play_buf(ch, &swb[ch - 1], pcm, n, false, vol_sfx * 0.9f);
 }
 void plat_music(const char *mood) {
     if (!audio_ok) return;
-    if (!mood) { ndspChnWaveBufClear(0); ndspChnReset(0); free(mpcm); mpcm = NULL; mname[0] = 0; return; }
+    if (!mood) { ndspChnWaveBufClear(0); ndspChnReset(0); if (mpcm) linearFree(mpcm); mpcm = NULL; mname[0] = 0; return; }
     if (!strcmp(mname, mood)) return;
-    size_t n; int16_t *pcm = synth_music(mood, &n); if (!pcm) return;
-    ndspChnWaveBufClear(0); ndspChnReset(0); svcSleepThread(20 * 1000 * 1000LL); free(mpcm); mpcm = pcm; snprintf(mname, 16, "%s", mood);
+    size_t n; int16_t *pcm = synth_music(mood, &n); if (!pcm) return; pcm = to_linear(pcm, n); if (!pcm) return;
+    ndspChnWaveBufClear(0); ndspChnReset(0); svcSleepThread(20 * 1000 * 1000LL); if (mpcm) linearFree(mpcm); mpcm = pcm; snprintf(mname, 16, "%s", mood);
     play_buf(0, &mwb, mpcm, n, true, vol_music * 0.8f);
 }
