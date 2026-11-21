@@ -1,0 +1,26 @@
+# Builds the Nintendo DS port (nds/) with BlocksDS into OurSpringHours.nds and publishes it to the "nds-latest" release.
+name: Build NDS
+permissions:
+  contents: write
+on:
+  workflow_dispatch:
+  push:
+    paths: ["nds/**", "3ds/js/**", "3ds/source/**", "assets/**", "js/**", ".github/workflows/build-nds.yml"]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: skylyrac/blocksds:slim-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: make -C nds -j2
+      - run: ls -l nds/*.nds
+      - name: Publish to the "nds-latest" release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nds-latest
+          name: DS build (latest)
+          prerelease: true
+          body: "Automatic build of the Nintendo DS port. Load OurSpringHours.nds in NDSWeb / any DS emulator or flashcart. See nds/README.md."
+          files: nds/OurSpringHours.nds
