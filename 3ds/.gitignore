@@ -1,0 +1,6 @@
+build/
+romfs/gfx/
+romfs/story.js
+*.3dsx
+*.smdh
+*.elf
