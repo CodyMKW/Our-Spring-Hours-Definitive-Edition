@@ -9,7 +9,5 @@ GAME_SUBTITLE2	:= CodyMKW
 SOURCEDIRS	:= source
 INCLUDEDIRS	:= source
 NITROFSDIR	:= nitrofs
-LIBS		:= -lnds9 -lfat
-LIBDIRS		:= $(BLOCKSDS)/libs/libnds
 
 include $(BLOCKSDS)/sys/default_makefiles/rom_arm9/Makefile
