@@ -11,7 +11,7 @@ TOPDIR ?= $(CURDIR)
 include $(DEVKITARM)/3ds_rules
 
 TARGET      := OurSpringHours
-BUILD       := build/3ds
+BUILD       := build_3ds
 SOURCES     := source third_party/quickjs
 DATA        :=
 INCLUDES    := source third_party/quickjs third_party/stb
@@ -52,7 +52,7 @@ all:
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 clean:
 	@echo clean ...
-	@rm -fr build/3ds $(TARGET).3dsx $(TARGET).smdh $(TARGET).elf
+	@rm -fr build_3ds $(TARGET).3dsx $(TARGET).smdh $(TARGET).elf
 else
 DEPENDS := $(OFILES:.o=.d)
 $(OUTPUT).3dsx : $(OUTPUT).elf $(OUTPUT).smdh

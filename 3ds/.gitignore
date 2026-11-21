@@ -4,3 +4,4 @@ romfs/story.js
 *.3dsx
 *.smdh
 *.elf
+build_3ds/
