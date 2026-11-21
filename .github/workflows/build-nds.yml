@@ -7,11 +7,29 @@ on:
   push:
     paths: ["nds/**", "3ds/js/**", "3ds/source/**", "assets/**", "js/**", ".github/workflows/build-nds.yml"]
 jobs:
+  assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: pip install pillow
+      - name: Story bundle
+        run: |
+          node 3ds/tools/bundle_story.js
+          mkdir -p nds/build_assets && cp 3ds/romfs/story.js nds/build_assets/story.js
+      - uses: actions/upload-artifact@v4
+        with: { name: nds-assets, path: nds/build_assets }
   build:
+    needs: assets
     runs-on: ubuntu-latest
     container: skylyrac/blocksds:slim-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { name: nds-assets, path: nds/nitrofs }
+      - name: Show template makefile (reference)
+        run: cat $BLOCKSDS/sys/default_makefiles/rom_arm9/Makefile | head -150
       - name: Build
         run: make -C nds -j2
       - run: ls -l nds/*.nds
