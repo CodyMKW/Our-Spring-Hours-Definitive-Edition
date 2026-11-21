@@ -30,7 +30,11 @@ jobs:
         with: { name: nds-assets, path: nds/nitrofs }
       - name: Build
         run: make -C nds -j2
-      - run: ls -l nds/*.nds
+      - name: Size report
+        run: |
+          ls -l nds/*.nds
+          $WONDERFUL_TOOLCHAIN/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-size nds/build/*.elf
+          $WONDERFUL_TOOLCHAIN/toolchain/gcc-arm-none-eabi/bin/arm-none-eabi-readelf -lW nds/build/*.elf | head -30
       - name: Publish to the "nds-latest" release
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
