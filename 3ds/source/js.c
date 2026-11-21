@@ -46,7 +46,7 @@ static void report(void) {
 }
 
 bool js_boot(void) {
-    rt = JS_NewRuntime(); if (!rt) return false;
+    plat_log("js: new runtime"); rt = JS_NewRuntime(); if (!rt) return false; plat_log("js: runtime ok");
     JS_SetMemoryLimit(rt, 28u << 20); 
 #ifdef OSH_DS
     JS_SetMaxStackSize(rt, 256 * 1024);
@@ -54,7 +54,7 @@ bool js_boot(void) {
     JS_SetMaxStackSize(rt, 512 * 1024);
 #endif
 
-    ctx = JS_NewContext(rt); if (!ctx) return false;
+    ctx = JS_NewContext(rt); if (!ctx) return false; plat_log("js: context ok");
     JSValue g = JS_GetGlobalObject(ctx);
     JS_SetPropertyStr(ctx, g, "__store_get", JS_NewCFunction(ctx, n_get, "__store_get", 1));
     JS_SetPropertyStr(ctx, g, "__store_set", JS_NewCFunction(ctx, n_set, "__store_set", 2));
@@ -63,7 +63,7 @@ bool js_boot(void) {
     JS_FreeValue(ctx, g);
     char *src; size_t len;
     if (!plat_asset_read("story.js", &src, &len)) { plat_log("story.js missing"); return false; }
-    JSValue r = JS_Eval(ctx, src, len, "story.js", JS_EVAL_TYPE_GLOBAL);
+    plat_log("js: story read %d", (int)len); JSValue r = JS_Eval(ctx, src, len, "story.js", JS_EVAL_TYPE_GLOBAL); plat_log("js: eval done");
     free(src);
     if (JS_IsException(r)) { report(); return false; }
     JS_FreeValue(ctx, r);
