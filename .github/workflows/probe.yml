@@ -1,0 +1,14 @@
+name: probe
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm:latest
+    steps:
+      - run: |
+          dkp-pacman -Sy --noconfirm >/dev/null 2>&1
+          echo "== pacman"; dkp-pacman -Ss 'banner|makerom|3dstool|bannertool' | head -20
+          echo "== makerom releases"; curl -fsSL "https://api.github.com/repos/3DSGuy/Project_CTR/releases?per_page=5" | grep -o '"browser_download_url": *"[^"]*"' | head -20
+          echo "== bannertool search"; curl -fsSL "https://api.github.com/search/repositories?q=bannertool+3ds&per_page=8" | grep -o '"full_name": *"[^"]*"'
+          echo "== Steveice10"; curl -sSL "https://api.github.com/repos/Steveice10/bannertool/releases" | head -c 600
+          which python3 unzip curl
