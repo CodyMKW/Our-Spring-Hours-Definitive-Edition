@@ -1,0 +1,14 @@
+name: probe
+on: workflow_dispatch
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          set +e
+          for r in Steveice10/FBI FlagBrew/Checkpoint Universal-Team/Universal-Updater devkitPro/3ds-examples; do
+            for b in master main; do
+              L=$(curl -sSL "https://api.github.com/repos/$r/git/trees/$b?recursive=1" | grep -o '"path": *"[^"]*\.rsf"' | head -3)
+              [ -n "$L" ] && { echo "=== $r ($b)"; echo "$L"; break; }
+            done
+          done
