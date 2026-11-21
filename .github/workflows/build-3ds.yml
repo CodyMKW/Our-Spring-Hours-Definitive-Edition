@@ -68,11 +68,8 @@ jobs:
           set -e
           command -v unzip >/dev/null || (apt-get update -qq && apt-get install -y -qq unzip)
           mkdir -p tools-dl && cd tools-dl
-          api() { curl -fsSL -H "Authorization: Bearer ${{ github.token }}" "$1"; }
-          MR=$(api "https://api.github.com/repos/3DSGuy/Project_CTR/releases?per_page=40" | grep -o 'https://[^"]*makerom[^"]*ubuntu[^"]*\.zip' | head -1)
-          BT=$(api "https://api.github.com/repos/Steveice10/bannertool/releases" | grep -o 'https://[^"]*bannertool[^"]*\.zip' | head -1)
-          echo "makerom: $MR"; echo "bannertool: $BT"
-          curl -fsSL -o makerom.zip "$MR"; curl -fsSL -o bannertool.zip "$BT"
+          curl -fsSL -o makerom.zip "https://github.com/3DSGuy/Project_CTR/releases/download/makerom-v0.19.0/makerom-v0.19.0-ubuntu_x86_64.zip"
+          curl -fsSL -o bannertool.zip "https://github.com/diasurgical/bannertool/releases/download/1.2.0/bannertool.zip"
           unzip -oq makerom.zip -d mr; unzip -oq bannertool.zip -d bt
           MAKEROM=$(find mr -type f -name 'makerom*' ! -name '*.zip' ! -name '*.exe' | head -1)
           BANNERTOOL=$(find bt -type f -path '*linux-x86_64*' -name bannertool | head -1)
