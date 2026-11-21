@@ -25,7 +25,7 @@ ICON            := icon.png
 ARCH    := -march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 CFLAGS  := -g -O2 -ffunction-sections -fno-strict-aliasing -mword-relocations $(ARCH) \
            -D__3DS__ -DEMSCRIPTEN -DOSH_NO_TZ -D_GNU_SOURCE '-DCONFIG_VERSION="2024-01-13"' -Wall -Wno-unused-function -Wno-unused-variable -Wno-misleading-indentation \
-           -Wno-implicit-fallthrough -Wno-sign-compare -Wno-unused-but-set-variable -Wno-array-bounds -Wno-format-truncation -Wno-stringop-truncation -Wno-unused-parameter -Wno-missing-field-initializers
+           -Wno-implicit-fallthrough -Wno-sign-compare -Wno-unused-but-set-variable -Wno-array-bounds -Wno-incompatible-pointer-types -Wno-int-conversion -Wno-format-truncation -Wno-stringop-truncation -Wno-unused-parameter -Wno-missing-field-initializers
 CFLAGS  += $(INCLUDE)
 CXXFLAGS := $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
 ASFLAGS := -g $(ARCH)
