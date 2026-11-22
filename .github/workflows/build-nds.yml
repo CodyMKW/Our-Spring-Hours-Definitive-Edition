@@ -35,7 +35,7 @@ jobs:
           mkdir -p probe && cp -r nds probe_src
           for n in 1 2 3 4; do
             rm -rf probe_src/build; make -C probe_src -j2 NAME=P$n EXTRA="-DPROBE=$n -DPROBE_ONLY" ARCH="-marm -mcpu=arm946e-s+nofp" >/dev/null 2>&1 || echo "probe $n failed"
-            cp probe_src/P$n.nds probe/ ; cp probe_src/build/P$n.elf probe/ 
+            cp probe_src/P$n.nds probe/ || true; cp probe_src/build/P$n.elf probe/ || true
           done
           ls -l probe
       - name: Build

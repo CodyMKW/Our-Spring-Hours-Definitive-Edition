@@ -3,6 +3,7 @@
 #include <nds.h>
 #include <nds/arm9/exceptions.h>
 #include <stdlib.h>
+#include <filesystem.h>
 volatile unsigned pdbg[8];
 static void busy(void) { for (volatile unsigned i = 0; i < 40000000u; i++) { if ((i & 0xFFFFF) == 0) pdbg[3] = i >> 20; } pdbg[2] = 77; }
 static void run_on_stack(void (*fn)(void), void *top) {
