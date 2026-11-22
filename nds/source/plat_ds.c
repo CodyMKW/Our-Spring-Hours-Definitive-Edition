@@ -51,12 +51,18 @@ static inline u16 bl(u16 d, u16 s, u32 a) {     /* a: 0..32 */
     u32 r = (dd + (((ss - dd) * a) >> 5)) & MASK555;
     return (u16)(r | (r >> 16) | 0x8000);
 }
-/* two pixels at once: s2 = s | s<<16 (masked source pair is not needed: same colour in both halves) */
-static inline u32 bl2(u32 d2, u32 ssm, u32 a) {   /* d2: two packed pixels; ssm: ((s | s<<16) & MASK555) */
-    u32 lo = d2 & 0xFFFF, hi = d2 >> 16;
-    u32 dl = (lo | (lo << 16)) & MASK555, dh = (hi | (hi << 16)) & MASK555;
-    u32 rl = (dl + (((ssm - dl) * a) >> 5)) & MASK555, rh = (dh + (((ssm - dh) * a) >> 5)) & MASK555;
-    return ((rl | (rl >> 16)) & 0xFFFF) | (((rh | (rh >> 16)) & 0xFFFF) << 16) | 0x80008000u;
+/* two pixels at once, alpha quantised to eighths: built from "average of two" steps (5 ALU ops per step, no multiplies) */
+static inline u32 avg2(u32 a, u32 b) { return (a & b) + (((a ^ b) & 0x7BDE7BDEu) >> 1); }
+static inline u32 blq(u32 d, u32 s, u32 a8) {       /* a8: 1..7 (0 and 8 handled by the caller) */
+    switch (a8) {
+    case 4: return avg2(d, s);
+    case 2: return avg2(d, avg2(d, s));
+    case 6: return avg2(s, avg2(d, s));
+    case 1: return avg2(d, avg2(d, avg2(d, s)));
+    case 3: return avg2(avg2(d, avg2(d, s)), avg2(d, s));
+    case 5: return avg2(avg2(d, s), avg2(s, avg2(d, s)));
+    default: return avg2(s, avg2(s, avg2(d, s)));   /* 7 */
+    }
 }
 static inline void span(u16 *row, int x0, int x1, u16 c, u32 a) {   /* [x0,x1) integer pixels */
     if (x0 < 0) x0 = 0; if (x1 > W) x1 = W; if (x0 >= x1 || a == 0) return;
@@ -66,10 +72,16 @@ static inline void span(u16 *row, int x0, int x1, u16 c, u32 a) {   /* [x0,x1) i
         while (n--) *p++ = c2;
         if ((x1 - x0) & 1) row[x1 - 1] = c;
     } else {
-        u32 sm = ((u32)c | ((u32)c << 16)) & MASK555;
+        u32 a8 = (a + 2) >> 2; if (a8 == 0) return;
+        if (a8 >= 8) { span(row, x0, x1, c, 32); return; }
+        u32 s2 = c | ((u32)c << 16);
         if ((x0 & 1) && x0 < x1) { row[x0] = bl(row[x0], c, a); x0++; }
         u32 *p = (u32 *)(row + x0); int n = (x1 - x0) >> 1;
-        while (n--) { *p = bl2(*p, sm, a); p++; }
+        switch (a8) {
+        case 4: while (n--) { *p = avg2(*p, s2); p++; } break;
+        case 2: while (n--) { *p = avg2(*p, avg2(*p, s2)); p++; } break;
+        default: while (n--) { *p = blq(*p, s2, a8); p++; } break;
+        }
         if ((x1 - x0) & 1) row[x1 - 1] = bl(row[x1 - 1], c, a);
     }
 }
