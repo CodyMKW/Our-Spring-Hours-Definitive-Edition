@@ -1,3 +1,4 @@
+#ifndef PROBE_ONLY
 /* Spike: boot QuickJS + story.js on the DS and report memory/time on the screen. */
 #include <nds.h>
 #include <nds/arm9/exceptions.h>
@@ -58,3 +59,5 @@ static void app_main(void) {
     int n = 0; for (char *q = r; *q && n < 30; q++, n++) { for (int y = 24; y < 32; y++) for (int x = 0; x < 8; x++) fb[(y + 60) * 256 + n * 9 + x] = ((*q * 7) & 31) << 5 | BIT(15); }
     dbg[8] = 1; while (1) swiWaitForVBlank();
 }
+
+#endif
