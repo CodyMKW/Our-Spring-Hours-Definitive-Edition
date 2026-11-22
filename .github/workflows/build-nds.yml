@@ -33,9 +33,9 @@ jobs:
       - name: Probes (liveness experiments)
         run: |
           mkdir -p probe && cp -r nds probe_src
-          for n in 1 2 3 4 5 6 7; do
-            rm -rf probe_src/build; make -C probe_src -j2 NAME=P$n EXTRA="-DPROBE=$n -DPROBE_ONLY" ARCH="-marm -mcpu=arm946e-s+nofp" >/dev/null 2>&1 || echo "probe $n failed"
-            cp probe_src/P$n.nds probe/ || true; cp probe_src/build/P$n.elf probe/ || true
+          for n in 1 7; do
+            rm -rf probe_src/build; make -C probe_src -j2 NAME=T$n EXTRA="-DPROBE=$n -DPROBE_ONLY" >/dev/null 2>&1 || echo "probe T$n failed"
+            cp probe_src/T$n.nds probe/ || true; cp probe_src/build/T$n.elf probe/ || true
           done
           ls -l probe
       - name: Build
@@ -56,17 +56,7 @@ jobs:
           files: |
             nds/OurSpringHours.nds
             nds/build/OurSpringHours.elf
-            probe/P1.nds
-            probe/P2.nds
-            probe/P3.nds
-            probe/P4.nds
-            probe/P1.elf
-            probe/P2.elf
-            probe/P3.elf
-            probe/P4.elf
-            probe/P7.nds
-            probe/P7.elf
-            probe/P6.nds
-            probe/P6.elf
-            probe/P5.nds
-            probe/P5.elf
+            probe/T1.nds
+            probe/T1.elf
+            probe/T7.nds
+            probe/T7.elf
