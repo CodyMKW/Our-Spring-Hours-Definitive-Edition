@@ -1531,9 +1531,6 @@ static int init_class_range(JSRuntime *rt, JSClassShortDef const *tab,
 
     for(i = 0; i < count; i++) {
         class_id = i + start;
-#ifdef OSH_DS
-        plat_log("c%d", i);
-#endif
         memset(cm, 0, sizeof(*cm));
         cm->finalizer = tab[i].finalizer;
         cm->gc_mark = tab[i].gc_mark;

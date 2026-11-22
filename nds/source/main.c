@@ -12,8 +12,8 @@ bool plat_store_read(const char *n, char **d, size_t *l) { return false; }
 bool plat_store_write(const char *n, const char *d, size_t l) { return false; }
 void plat_store_remove(const char *n) {}
 #include <stdarg.h>
-volatile unsigned dbg[16]; char dbg_log[1024]; static int dbg_n;
-void plat_log(const char *f, ...) { va_list a; va_start(a, f); if (dbg_n < 900) dbg_n += vsnprintf(dbg_log + dbg_n, 1000 - dbg_n, f, a); va_end(a); if (dbg_n < 1000) dbg_log[dbg_n++] = '\n'; }
+volatile unsigned dbg[16]; char dbg_log[6000]; static int dbg_n;
+void plat_log(const char *f, ...) { va_list a; va_start(a, f); if (dbg_n < 5800) dbg_n += vsnprintf(dbg_log + dbg_n, 5900 - dbg_n, f, a); va_end(a); if (dbg_n < 5900) dbg_log[dbg_n++] = '\n'; }
 bool plat_asset_read(const char *name, char **data, size_t *len) {
     char p[64]; snprintf(p, 64, "nitro:/%s", name);
     FILE *f = fopen(p, "rb"); if (!f) return false;
