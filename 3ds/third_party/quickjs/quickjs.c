@@ -4865,7 +4865,6 @@ static JSObject *get_proto_obj(JSValueConst proto_val)
 JSValue JS_NewObjectProtoClass(JSContext *ctx, JSValueConst proto_val,
                                JSClassID class_id)
 {
-    OSHM("npc");
     JSShape *sh;
     JSObject *proto;
 
