@@ -104,6 +104,10 @@ Part II starts with Part I stats × 0.5, Part III with × 0.6 (all flags carry; 
 The visual novel (all parts + bonus) and single-player Blossom Drop also run on a modded 3DS as a `.3dsx`. Download it from the
 [3ds-latest release](../../releases/tag/3ds-latest) and see [`3ds/README.md`](3ds/README.md) for install, controls, build steps and file layout.
 
+## Nintendo DS port (experimental)
+
+A `.nds` of the VN + Blossom Drop is on the [nds-latest release](../../releases/tag/nds-latest); see [`nds/README.md`](nds/README.md). Emulator-tested only, no sound yet.
+
 ## Blossom Drop (minigame)
 
 Open from the title screen (**✿ Blossom Drop**) or directly at `blossom/index.html`. A Suika-style merge game: drop orbs into the planter, match two of the same tier to grow them through 10 tiers (Petal → Bud → Blossom → Dango → Onigiri → Tomato → Lantern → Wish Charm → Moon → Cherry Tree). Chain merges within ~1.15s for a combo multiplier. If an orb stays above the dashed line too long, the jar overflows.
