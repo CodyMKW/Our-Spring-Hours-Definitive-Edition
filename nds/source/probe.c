@@ -25,6 +25,9 @@ int main(void) {
     swiWaitForVBlank(); busy();
 #elif PROBE == 7
     for (volatile unsigned i = 0; i < 40000000u; i++) { if ((i & 0xFFFFF) == 0) { pdbg[3] = i >> 20; swiWaitForVBlank(); } } pdbg[2] = 77;
+#elif PROBE == 9
+    videoSetMode(MODE_5_2D); vramSetBankA(VRAM_A_MAIN_BG);
+    while (1) { swiWaitForVBlank(); pdbg[3]++; }
 #elif PROBE == 4
     pdbg[1] = 5; nitroFSInit(NULL); busy();
 #endif
