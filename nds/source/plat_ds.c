@@ -41,7 +41,7 @@ const Input *plat_input(void) { return &in; }
 void plat_target(int s) { cur = s ? 1 : 0; }
 uint64_t plat_time_ms(void) { u32 t = (u32)TIMER_DATA(0) | ((u32)TIMER_DATA(1) << 16); return (uint64_t)(((unsigned long long)t * 1000ULL) / 32728ULL); }
 
-/* ---------------------------------------------------------------- pixel helpers */
+/* ---------------------------------------------------------------- pixel helpers (all geometry in 24.8 fixed point: the ARM9 has no FPU) */
 static inline u16 rgb555(uint32_t c) { return (u16)((((c >> 27) & 31)) | (((c >> 19) & 31) << 5) | (((c >> 11) & 31) << 10) | 0x8000); }
 static inline u32 a32of(uint32_t c) { u32 a = c & 255; return (a * 32 + 127) / 255; }
 static inline u16 bl(u16 d, u16 s, u32 a) {     /* a: 0..32 */
@@ -49,101 +49,129 @@ static inline u16 bl(u16 d, u16 s, u32 a) {     /* a: 0..32 */
     u32 r = (dd + (((ss - dd) * a) >> 5)) & MASK555;
     return (u16)(r | (r >> 16) | 0x8000);
 }
-static inline void span(u16 *row, int x0, int x1, u16 c, u32 a) {   /* [x0,x1) */
+/* two pixels at once: s2 = s | s<<16 (masked source pair is not needed: same colour in both halves) */
+static inline u32 bl2(u32 d2, u32 ssm, u32 a) {   /* d2: two packed pixels; ssm: ((s | s<<16) & MASK555) */
+    u32 lo = d2 & 0xFFFF, hi = d2 >> 16;
+    u32 dl = (lo | (lo << 16)) & MASK555, dh = (hi | (hi << 16)) & MASK555;
+    u32 rl = (dl + (((ssm - dl) * a) >> 5)) & MASK555, rh = (dh + (((ssm - dh) * a) >> 5)) & MASK555;
+    return ((rl | (rl >> 16)) & 0xFFFF) | (((rh | (rh >> 16)) & 0xFFFF) << 16) | 0x80008000u;
+}
+static inline void span(u16 *row, int x0, int x1, u16 c, u32 a) {   /* [x0,x1) integer pixels */
     if (x0 < 0) x0 = 0; if (x1 > W) x1 = W; if (x0 >= x1 || a == 0) return;
-    if (a >= 32) { for (int x = x0; x < x1; x++) row[x] = c; }
-    else for (int x = x0; x < x1; x++) row[x] = bl(row[x], c, a);
+    if (a >= 32) {
+        if ((x0 & 1) && x0 < x1) { row[x0++] = c; }
+        u32 c2 = c | ((u32)c << 16); u32 *p = (u32 *)(row + x0); int n = (x1 - x0) >> 1;
+        while (n--) *p++ = c2;
+        if ((x1 - x0) & 1) row[x1 - 1] = c;
+    } else {
+        u32 sm = ((u32)c | ((u32)c << 16)) & MASK555;
+        if ((x0 & 1) && x0 < x1) { row[x0] = bl(row[x0], c, a); x0++; }
+        u32 *p = (u32 *)(row + x0); int n = (x1 - x0) >> 1;
+        while (n--) { *p = bl2(*p, sm, a); p++; }
+        if ((x1 - x0) & 1) row[x1 - 1] = bl(row[x1 - 1], c, a);
+    }
 }
 static inline void pset(u16 *px, int x, int y, u16 c, u32 a) { if ((unsigned)x < W && (unsigned)y < H && a) px[y * W + x] = a >= 32 ? c : bl(px[y * W + x], c, a); }
-/* span with fractional end coverage */
-static void spanf(u16 *row, float xl, float xr, u16 c, u32 a) {
-    if (xr <= xl) return;
-    int il = (int)floorf(xl), ir = (int)floorf(xr);
-    if (il == ir) { pset(row, il, 0, 0, 0); u32 aa = (u32)((xr - xl) * a + 0.5f); if ((unsigned)il < W && aa) row[il] = bl(row[il], c, aa > 32 ? 32 : aa); return; }
-    if ((unsigned)il < W) { float cov = 1.0f - (xl - il); u32 aa = (u32)(cov * a + 0.5f); if (aa) row[il] = bl(row[il], c, aa > 32 ? 32 : aa); }
-    span(row, il + 1, ir, c, a);
-    if ((unsigned)ir < W) { float cov = xr - ir; u32 aa = (u32)(cov * a + 0.5f); if (aa) row[ir] = bl(row[ir], c, aa > 32 ? 32 : aa); }
+static inline void edge1(u16 *row, int x, u16 c, u32 a, int cov) {          /* cov 0..256 */
+    if ((unsigned)x >= W) return; u32 aa = (a * cov + 128) >> 8; if (aa) row[x] = aa >= 32 ? c : bl(row[x], c, aa);
 }
-#define TX(t, x) ((x) * (t)->s + (t)->ox)
-#define TY(t, y) ((y) * (t)->s + (t)->oy)
+/* horizontal span with fractional (1/256 px) ends */
+static void hspan(u16 *row, int xl, int xr, u16 c, u32 a) {
+    if (xr <= xl || a == 0) return;
+    int il = xl >> 8, ir = xr >> 8;
+    if (il == ir) { edge1(row, il, c, a, xr - xl); return; }
+    if (xl & 255) { edge1(row, il, c, a, 256 - (xl & 255)); il++; }
+    span(row, il, ir, c, a);
+    if (xr & 255) edge1(row, ir, c, a, xr & 255);
+}
+static inline int FX(float f) { return (int)(f * 256.0f + (f >= 0 ? 0.5f : -0.5f)); }
+static u32 isqrt32(u32 n) { u32 r = 0, bit = 1u << 30; while (bit > n) bit >>= 2; while (bit) { if (n >= r + bit) { n -= r + bit; r = (r >> 1) + bit; } else r >>= 1; bit >>= 2; } return r; }
+#define TXF(t, x) FX((x) * (t)->s + (t)->ox)
+#define TYF(t, y) FX((y) * (t)->s + (t)->oy)
 
 /* ---------------------------------------------------------------- shapes */
-static void rect_dev(Tgt *t, float x0, float y0, float x1, float y1, u16 c, u32 a) {
+static void rect_dev(Tgt *t, int x0, int y0, int x1, int y1, u16 c, u32 a) {      /* 24.8 device coords */
     if (a == 0 || x1 <= x0 || y1 <= y0) return;
-    if (y0 < 0) y0 = 0; if (y1 > H) y1 = H;
-    int iy0 = (int)floorf(y0), iy1 = (int)ceilf(y1);
-    for (int y = iy0; y < iy1 && y < H; y++) {
-        float cov = 1.0f; if (y < y0) cov -= (y0 - y); if (y + 1 > y1) cov -= (y + 1 - y1);
-        u32 aa = (u32)(cov * a + 0.5f); if (aa == 0) continue; if (aa > 32) aa = 32;
-        if (x0 == floorf(x0) && x1 == floorf(x1)) span(t->px + y * W, (int)x0, (int)x1, c, aa); else spanf(t->px + y * W, x0, x1, c, aa);
+    if (y0 < 0) y0 = 0; if (y1 > H * 256) y1 = H * 256; if (y1 <= y0) return;
+    int iy0 = y0 >> 8, iy1 = (y1 + 255) >> 8; bool xint = !((x0 | x1) & 255);
+    for (int y = iy0; y < iy1; y++) {
+        int cov = 256; if (y * 256 < y0) cov -= y0 - y * 256; if ((y + 1) * 256 > y1) cov -= (y + 1) * 256 - y1;
+        u32 aa = (a * cov + 128) >> 8; if (!aa) continue;
+        if (xint) span(t->px + y * W, x0 >> 8, x1 >> 8, c, aa); else hspan(t->px + y * W, x0, x1, c, aa);
     }
 }
 void plat_rect(float x, float y, float w, float h, uint32_t col) {
-    PB(0); Tgt *t = &TG[cur]; rect_dev(t, TX(t, x), TY(t, y), TX(t, x + w), TY(t, y + h), rgb555(col), a32of(col)); PE(0);
+    PB(0); Tgt *t = &TG[cur]; rect_dev(t, TXF(t, x), TYF(t, y), TXF(t, x + w), TYF(t, y + h), rgb555(col), a32of(col)); PE(0);
 }
 void plat_rect_grad(float x, float y, float w, float h, uint32_t c0, uint32_t c1) {
-    PB(0); Tgt *t = &TG[cur]; float y0 = TY(t, y), y1 = TY(t, y + h), x0 = TX(t, x), x1 = TX(t, x + w);
-    int iy0 = (int)floorf(y0), iy1 = (int)ceilf(y1); if (iy0 < 0) iy0 = 0; if (iy1 > H) iy1 = H; if (y1 <= y0) return;
+    PB(0); Tgt *t = &TG[cur]; int y0 = TYF(t, y), y1 = TYF(t, y + h), x0 = TXF(t, x), x1 = TXF(t, x + w);
+    if (y1 <= y0) { PE(0); return; }
+    int iy0 = y0 >> 8, iy1 = (y1 + 255) >> 8; if (iy0 < 0) iy0 = 0; if (iy1 > H) iy1 = H;
     int r0 = c0 >> 24, g0 = (c0 >> 16) & 255, b0 = (c0 >> 8) & 255, a0 = c0 & 255, r1 = c1 >> 24, g1 = (c1 >> 16) & 255, b1 = (c1 >> 8) & 255, a1 = c1 & 255;
+    int hh = y1 - y0;
     for (int yy = iy0; yy < iy1; yy++) {
-        int f = (int)(((yy + 0.5f - y0) / (y1 - y0)) * 256.0f); if (f < 0) f = 0; if (f > 256) f = 256;
+        int f = (int)(((long long)(yy * 256 + 128 - y0) * 256) / hh); if (f < 0) f = 0; if (f > 256) f = 256;
         uint32_t c = RGBA(r0 + (((r1 - r0) * f) >> 8), g0 + (((g1 - g0) * f) >> 8), b0 + (((b1 - b0) * f) >> 8), a0 + (((a1 - a0) * f) >> 8));
-        rect_dev(t, x0, (float)yy, x1, (float)yy + 1, rgb555(c), a32of(c));
+        rect_dev(t, x0, yy * 256, x1, yy * 256 + 256, rgb555(c), a32of(c));
     }
     PE(0);
 }
-static void rrect_dev(Tgt *t, float x0, float y0, float x1, float y1, float r, u16 c, u32 a) {
-    float w = x1 - x0, h = y1 - y0; if (w <= 0 || h <= 0 || a == 0) return;
+/* inset (24.8) of a rounded corner of radius r at vertical distance d (24.8) from the corner centre */
+static inline int corner_inset(int r, int d) { int o = r * r - d * d; if (o < 0) o = 0; return r - (int)isqrt32((u32)o); }
+static void rrect_dev(Tgt *t, int x0, int y0, int x1, int y1, int r, u16 c, u32 a) {
+    int w = x1 - x0, h = y1 - y0; if (w <= 0 || h <= 0 || a == 0) return;
     if (r > w / 2) r = w / 2; if (r > h / 2) r = h / 2;
-    if (r < 1.0f) { rect_dev(t, x0, y0, x1, y1, c, a); return; }
-    int iy0 = (int)floorf(y0), iy1 = (int)ceilf(y1);
+    if (r < 256) { rect_dev(t, x0, y0, x1, y1, c, a); return; }
+    int iy0 = y0 >> 8, iy1 = (y1 + 255) >> 8; if (iy0 < 0) iy0 = 0; if (iy1 > H) iy1 = H;
     for (int y = iy0; y < iy1; y++) {
-        if ((unsigned)y >= H) continue;
-        float yc = y + 0.5f, d = 0;
+        int yc = y * 256 + 128, d = 0;
         if (yc < y0 + r) d = (y0 + r) - yc; else if (yc > y1 - r) d = yc - (y1 - r);
-        float inset = d > 0 ? r - sqrtf(fmaxf(0.0f, r * r - d * d)) : 0.0f;
-        float cov = 1.0f; if (y < y0) cov -= (y0 - y); if (y + 1 > y1) cov -= (y + 1 - y1);
-        u32 aa = (u32)(cov * a + 0.5f); if (aa == 0) continue; if (aa > 32) aa = 32;
-        spanf(t->px + y * W, x0 + inset, x1 - inset, c, aa);
+        int inset = d > 0 ? corner_inset(r, d) : 0;
+        int cov = 256; if (y * 256 < y0) cov -= y0 - y * 256; if ((y + 1) * 256 > y1) cov -= (y + 1) * 256 - y1;
+        u32 aa = (a * cov + 128) >> 8; if (!aa) continue;
+        hspan(t->px + y * W, x0 + inset, x1 - inset, c, aa);
     }
 }
 void plat_rrect(float x, float y, float w, float h, float r, uint32_t col) {
-    PB(1); Tgt *t = &TG[cur]; rrect_dev(t, TX(t, x), TY(t, y), TX(t, x + w), TY(t, y + h), r * t->s, rgb555(col), a32of(col)); PE(1);
+    PB(1); Tgt *t = &TG[cur]; rrect_dev(t, TXF(t, x), TYF(t, y), TXF(t, x + w), TYF(t, y + h), FX(r * t->s), rgb555(col), a32of(col)); PE(1);
 }
 void plat_rrect_line(float x, float y, float w, float h, float r, uint32_t col) {
-    Tgt *t = &TG[cur]; float x0 = TX(t, x), y0 = TY(t, y), x1 = TX(t, x + w), y1 = TY(t, y + h), rr = r * t->s; u16 c = rgb555(col); u32 a = a32of(col);
-    /* outline = rounded rect minus a 1px-inset rounded rect, drawn per row */
-    float th = 1.0f; if (rr < 1) rr = 1; if (rr > (x1 - x0) / 2) rr = (x1 - x0) / 2; if (rr > (y1 - y0) / 2) rr = (y1 - y0) / 2;
-    for (int y = (int)floorf(y0); y < (int)ceilf(y1); y++) {
+    PB(1); Tgt *t = &TG[cur]; int x0 = TXF(t, x), y0 = TYF(t, y), x1 = TXF(t, x + w), y1 = TYF(t, y + h), rr = FX(r * t->s); u16 c = rgb555(col); u32 a = a32of(col);
+    if (rr < 256) rr = 256; if (rr > (x1 - x0) / 2) rr = (x1 - x0) / 2; if (rr > (y1 - y0) / 2) rr = (y1 - y0) / 2;
+    const int th = 256;
+    for (int y = y0 >> 8; y < ((y1 + 255) >> 8); y++) {
         if ((unsigned)y >= H) continue;
-        float yc = y + 0.5f, d = 0;
+        int yc = y * 256 + 128, d = 0;
         if (yc < y0 + rr) d = (y0 + rr) - yc; else if (yc > y1 - rr) d = yc - (y1 - rr);
-        float inset = d > 0 ? rr - sqrtf(fmaxf(0.0f, rr * rr - d * d)) : 0.0f;
-        float xl = x0 + inset, xr = x1 - inset;
-        if (yc < y0 + th || yc > y1 - th) { spanf(t->px + y * W, xl, xr, c, a); }
-        else { float run = (d > 0) ? th + (inset > 0 ? 0.6f : 0) : th; spanf(t->px + y * W, xl, xl + run + 0.4f, c, a); spanf(t->px + y * W, xr - run - 0.4f, xr, c, a); }
+        int inset = d > 0 ? corner_inset(rr, d) : 0, xl = x0 + inset, xr = x1 - inset;
+        if (yc < y0 + th || yc > y1 - th) hspan(t->px + y * W, xl, xr, c, a);
+        else { int run = th + (inset > 0 ? 150 : 0) + 100; hspan(t->px + y * W, xl, xl + run, c, a); hspan(t->px + y * W, xr - run, xr, c, a); }
     }
+    PE(1);
 }
-static void circle_dev(Tgt *t, float cx, float cy, float r, float ri, u16 c, u32 a) {
+static void circle_dev(Tgt *t, int cx, int cy, int r, int ri, u16 c, u32 a) {      /* 24.8 */
     if (r <= 0 || a == 0) return;
-    for (int y = (int)floorf(cy - r); y <= (int)ceilf(cy + r); y++) {
+    for (int y = (cy - r) >> 8; y <= ((cy + r) >> 8) + 1; y++) {
         if ((unsigned)y >= H) continue;
-        float dy = (y + 0.5f) - cy; float o2 = r * r - dy * dy; if (o2 <= 0) continue;
-        float ho = sqrtf(o2);
-        if (ri > 0 && fabsf(dy) < ri) { float hi = sqrtf(ri * ri - dy * dy); spanf(t->px + y * W, cx - ho, cx - hi, c, a); spanf(t->px + y * W, cx + hi, cx + ho, c, a); }
-        else spanf(t->px + y * W, cx - ho, cx + ho, c, a);
+        int dy = y * 256 + 128 - cy; int o2 = r * r - dy * dy; if (o2 <= 0) continue;
+        int ho = (int)isqrt32((u32)o2);
+        if (ri > 0 && (dy < 0 ? -dy : dy) < ri) { int hi = (int)isqrt32((u32)(ri * ri - dy * dy)); hspan(t->px + y * W, cx - ho, cx - hi, c, a); hspan(t->px + y * W, cx + hi, cx + ho, c, a); }
+        else hspan(t->px + y * W, cx - ho, cx + ho, c, a);
     }
 }
-void plat_circle(float x, float y, float r, uint32_t col) { PB(2); Tgt *t = &TG[cur]; circle_dev(t, TX(t, x), TY(t, y), r * t->s, 0, rgb555(col), a32of(col)); PE(2); }
+void plat_circle(float x, float y, float r, uint32_t col) { PB(2); Tgt *t = &TG[cur]; circle_dev(t, TXF(t, x), TYF(t, y), FX(r * t->s), 0, rgb555(col), a32of(col)); PE(2); }
 void plat_ring(float x, float y, float r, float th, uint32_t col) {
-    Tgt *t = &TG[cur]; float R = (r + th / 2) * t->s, ri = (r - th / 2) * t->s; if (R - ri < 1.0f) { ri = R - 1.0f; } if (ri < 0) ri = 0;
-    circle_dev(t, TX(t, x), TY(t, y), R, ri, rgb555(col), a32of(col));
+    PB(2); Tgt *t = &TG[cur]; int R = FX((r + th / 2) * t->s), ri = FX((r - th / 2) * t->s); if (R - ri < 256) ri = R - 256; if (ri < 0) ri = 0;
+    circle_dev(t, TXF(t, x), TYF(t, y), R, ri, rgb555(col), a32of(col)); PE(2);
 }
 void plat_line(float x0, float y0, float x1, float y1, float th, uint32_t col) {
-    Tgt *t = &TG[cur]; float ax = TX(t, x0), ay = TY(t, y0), bx = TX(t, x1), by = TY(t, y1), r = th * t->s / 2; if (r < 0.5f) r = 0.5f;
-    float dx = bx - ax, dy = by - ay, len = sqrtf(dx * dx + dy * dy); int n = (int)(len / (r < 1 ? 1 : r)) + 1; u16 c = rgb555(col); u32 a = a32of(col);
-    if (r <= 0.6f) { for (int i = 0; i <= n; i++) { float f = (float)i / n; pset(t->px, (int)(ax + dx * f), (int)(ay + dy * f), c, a); } return; }
-    for (int i = 0; i <= n; i++) { float f = (float)i / n; circle_dev(t, ax + dx * f, ay + dy * f, r, 0, c, a); }
+    PB(2); Tgt *t = &TG[cur]; int ax = TXF(t, x0), ay = TYF(t, y0), bx = TXF(t, x1), by = TYF(t, y1), r = FX(th * t->s / 2); if (r < 128) r = 128;
+    int dx = bx - ax, dy = by - ay; int len = (int)isqrt32((u32)((dx >> 4) * (dx >> 4) + (dy >> 4) * (dy >> 4))) << 4; int step = r < 256 ? 256 : r; int n = len / step + 1; u16 c = rgb555(col); u32 a = a32of(col);
+    for (int i = 0; i <= n; i++) {
+        int px = ax + dx * i / n, py = ay + dy * i / n;
+        if (r <= 160) pset(t->px, px >> 8, py >> 8, c, a); else circle_dev(t, px, py, r, 0, c, a);
+    }
+    PE(2);
 }
 
 /* ---------------------------------------------------------------- images */
@@ -202,11 +230,14 @@ static void blit(Tgt *t, const Img *im, float su0, float sv0, float su1, float s
                 row[x] = a >= 32 ? c : bl(row[x], c, a);
             }
         } else {
-            for (int x = cx0; x < cx1; x++) {
-                float px = x + 0.5f - cx, py = y + 0.5f - cy;
-                float ux = px * cr + py * sr + dw / 2, uy = -px * sr + py * cr + dh / 2;
-                if (ux < 0 || uy < 0 || ux >= dw || uy >= dh) continue;
-                int u = (int)(su0 + ux / dw * suw), v = (int)(sv0 + uy / dh * svh); if (u >= sw) u = sw - 1; if (v >= im->sh) v = im->sh - 1;
+            float pyf = y + 0.5f - cy, pxf = cx0 + 0.5f - cx;
+            int ux = (int)((pxf * cr + pyf * sr + dw / 2) * 65536.0f), uy = (int)((-pxf * sr + pyf * cr + dh / 2) * 65536.0f);
+            int dux = (int)(cr * 65536.0f), duy = (int)(-sr * 65536.0f);
+            int fu = (int)(suw / dw * 65536.0f), fv = (int)(svh / dh * 65536.0f); int dwf = (int)(dw * 65536.0f), dhf = (int)(dh * 65536.0f);
+            for (int x = cx0; x < cx1; x++, ux += dux, uy += duy) {
+                if (ux < 0 || uy < 0 || ux >= dwf || uy >= dhf) continue;
+                int u = (int)(su0 * 65536.0f) + (int)(((long long)ux * fu) >> 16), v = (int)(sv0 * 65536.0f) + (int)(((long long)uy * fv) >> 16); u >>= 16; v >>= 16;
+                if (u >= sw) u = sw - 1; if (v >= im->sh) v = im->sh - 1;
                 u16 c = im->px[v * sw + u]; u32 a = 32;
                 if (im->al) { u32 ea = (im->al[v * sw + u] * ta) >> 8; a = ea >> 3; if (ea > 247) a = 32; if (!a) continue; } else if (ta < 255) a = (ta * 32 + 127) / 255;
                 if (!plain) { u32 r = (c & 31) * tr >> 8, g = ((c >> 5) & 31) * tg >> 8, b = ((c >> 10) & 31) * tb >> 8; c = (u16)(r | g << 5 | b << 10 | 0x8000); }
@@ -216,11 +247,11 @@ static void blit(Tgt *t, const Img *im, float su0, float sv0, float su1, float s
     }
 }
 void plat_img_draw(const Img *im, float x, float y, float sx, float sy, float rot, uint32_t tint) {
-    PB(3); Tgt *t = &TG[cur]; blit(t, im, 0, 0, im->sw, im->sh, TX(t, x), TY(t, y), im->lw * sx * t->s, im->lh * sy * t->s, rot, tint); PE(3);
+    PB(3); Tgt *t = &TG[cur]; blit(t, im, 0, 0, im->sw, im->sh, x * t->s + t->ox, y * t->s + t->oy, im->lw * sx * t->s, im->lh * sy * t->s, rot, tint); PE(3);
 }
 void plat_img_draw_part(const Img *im, int sx, int sy, int sw, int sh, float x, float y, float w, float h, uint32_t tint) {
     Tgt *t = &TG[cur]; float fx = (float)im->sw / im->lw, fy = (float)im->sh / im->lh;
-    blit(t, im, sx * fx, sy * fy, (sx + sw) * fx, (sy + sh) * fy, TX(t, x), TY(t, y), w * t->s, h * t->s, 0, tint);
+    blit(t, im, sx * fx, sy * fy, (sx + sw) * fx, (sy + sh) * fy, x * t->s + t->ox, y * t->s + t->oy, w * t->s, h * t->s, 0, tint);
 }
 
 /* ---------------------------------------------------------------- text */
@@ -270,7 +301,7 @@ static void draw_run(Tgt *t, const SizeRec *sz, float ox, float oy, uint32_t col
 void plat_text(float x, float y, float size, uint32_t col, int fl, const char *s) {
     if (!fontdata || !*s) return;
     PB(4); Tgt *t = &TG[cur]; const SizeRec *sz = size_for(size);
-    float w = plat_text_w(size, s) * t->s; float ox = TX(t, x), oy = TY(t, y);
+    float w = plat_text_w(size, s) * t->s; float ox = x * t->s + t->ox, oy = y * t->s + t->oy;
     if (fl & T_CENTER) ox -= w / 2; else if (fl & T_RIGHT) ox -= w;
     if (fl & T_SHADOW) draw_run(t, sz, ox + 1, oy + 1, RGBA(0, 0, 0, (int)((col & 255) * 0.6f)), s);
     draw_run(t, sz, ox, oy, col, s); PE(4);
