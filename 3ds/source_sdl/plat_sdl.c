@@ -125,6 +125,7 @@ Img *plat_img_load(const char *name) {
 }
 void plat_img_free(Img *im) { if (im) { SDL_DestroyTexture(im->t); free(im); } }
 int plat_img_w(const Img *im) { return im->w; }
+size_t plat_img_bytes(const Img *im) { (void)im; return 0; }
 int plat_img_h(const Img *im) { return im->h; }
 static void tint_set(SDL_Texture *t, uint32_t c) { SDL_SetTextureColorMod(t, c >> 24, (c >> 16) & 255, (c >> 8) & 255); SDL_SetTextureAlphaMod(t, c & 255); }
 void plat_img_draw(const Img *im, float x, float y, float sx, float sy, float rot, uint32_t tint) {

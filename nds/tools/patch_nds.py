@@ -13,6 +13,7 @@ p = sys.argv[1]
 d = bytearray(open(p, "rb").read())
 print("unit code before: 0x%02X" % d[0x12])
 d[0x12] = 0x00
+d[0x160:0x1000] = bytes(0x1000 - 0x160)       # drop the DSi extended header
 d[0x15E:0x160] = crc16(d[0:0x15E]).to_bytes(2, "little")
 open(p, "wb").write(d)
 print("patched: unit code 0x00, header crc 0x%04X" % int.from_bytes(d[0x15E:0x160], "little"))

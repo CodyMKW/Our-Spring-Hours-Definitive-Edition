@@ -79,6 +79,7 @@ static Img *dead[32]; static int ndead;
 static void flush_dead(void) { for (int i = 0; i < ndead; i++) { C2D_SpriteSheetFree(dead[i]->sheet); free(dead[i]); } ndead = 0; }
 void plat_img_free(Img *im) { if (!im) return; if (ndead >= 32) { C3D_FrameSync(); flush_dead(); } dead[ndead++] = im; }
 int plat_img_w(const Img *im) { return im->w; }
+size_t plat_img_bytes(const Img *im) { (void)im; return 0; }
 int plat_img_h(const Img *im) { return im->h; }
 static void tint_of(C2D_ImageTint *t, uint32_t c) {      /* RGB modulates by darkening toward black, alpha = opacity */
     float dim = 1.0f - (float)(((c >> 24) & 255) + ((c >> 16) & 255) + ((c >> 8) & 255)) / (3 * 255.0f);

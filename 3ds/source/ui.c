@@ -17,7 +17,13 @@ bool ui_hit(int x, int y, int w, int h) { const Input *i = plat_input(); return 
 bool ui_touching(int x, int y, int w, int h) { const Input *i = plat_input(); return i->touch_held && i->tx >= x && i->tx < x + w && i->ty >= y && i->ty < y + h; }
 
 /* ---- image cache (textures are big on a 3DS — keep a few backgrounds, all sprites) */
+#ifdef OSH_DS
+#define NIMG 40
+#define IMG_BUDGET (1100u * 1024u)      /* DS: pictures live in the ~4 MB main RAM, so cap the cache by bytes */
+#else
 #define NIMG 44
+#define IMG_BUDGET 0xFFFFFFFFu
+#endif
 static struct { char name[40]; Img *im; uint32_t used; } cache[NIMG]; static uint32_t tick;
 Img *img_get(const char *name) {
     int free_i = -1, lru = 0;
@@ -25,6 +31,13 @@ Img *img_get(const char *name) {
         if (cache[i].im && !strcmp(cache[i].name, name)) { cache[i].used = ++tick; return cache[i].im; }
         if (!cache[i].im && free_i < 0) free_i = i;
         if (cache[i].im && cache[i].used < cache[lru].used) lru = i;
+    }
+    /* make room first (DS: by bytes) */
+    for (;;) {
+        size_t tot = 0; int victim = -1;
+        for (int i = 0; i < NIMG; i++) if (cache[i].im) { tot += plat_img_bytes(cache[i].im); if (victim < 0 || cache[i].used < cache[victim].used) victim = i; }
+        if (tot < IMG_BUDGET || victim < 0) break;
+        plat_img_free(cache[victim].im); cache[victim].im = NULL; free_i = victim;
     }
     Img *im = plat_img_load(name); if (!im) return NULL;
     int slot = free_i >= 0 ? free_i : lru;

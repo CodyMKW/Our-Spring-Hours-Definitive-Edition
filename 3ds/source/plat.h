@@ -44,6 +44,7 @@ Img *plat_img_load(const char *name);            /* NULL if missing */
 void plat_img_free(Img *im);
 int plat_img_w(const Img *im);
 int plat_img_h(const Img *im);
+size_t plat_img_bytes(const Img *im);             /* memory the picture occupies (used for the DS image-cache budget) */
 /* draw with top-left at (x,y), scaled, rotated about its centre (radians), modulated by colour (alpha = opacity) */
 void plat_img_draw(const Img *im, float x, float y, float sx, float sy, float rot, uint32_t tint);
 /* draw only the sub-rectangle (srcx,srcy,srcw,srch) of the image into a w x h box */
