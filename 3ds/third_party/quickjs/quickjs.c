@@ -1,3 +1,6 @@
+#ifdef OSH_DS
+#pragma GCC optimize ("O1")
+#endif
 /*
  * QuickJS Javascript Engine
  * 
