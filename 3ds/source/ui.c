@@ -120,7 +120,7 @@ int ui_menu(const char *title, const char *sub, const char **items, const char *
         if (in->touch_up && !dragging && in->ty >= Y0 && in->ty < Y0 + VIS * RH) { int idx = scroll + (in->ty - Y0) / RH; if (idx < n) { sel = idx; plat_sfx("choice"); return sel; } }
         if (in->touch_up && in->ty < 28 && in->tx > 270 && !dragging) return -1;
 
-        plat_target(0); ui_backdrop_draw(ui_time);
+        plat_target(0); if (!ui_art) ui_backdrop_draw(ui_time);
         if (ui_art) plat_img_draw(ui_art, 0, 0, 1, 1, 0, RGB(255, 255, 255));
         for (int i = 0; i < 16; i++) { float sp = 12 + (i % 4) * 5, x = fmodf(i * 53 + ui_time * sp * 0.7f + sinf(ui_time + i) * 20, 440) - 20, y = fmodf(i * 37 + ui_time * sp, 270) - 15; ui_petal(x, y, 4 + (i % 3), ui_time + i, RGBA(255, 200, 218, 215)); }
         ui_fade_edges();

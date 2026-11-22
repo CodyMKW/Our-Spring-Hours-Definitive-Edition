@@ -4,6 +4,8 @@
  * (top 0.64, letterboxed; bottom 0.8). Pictures are pre-shrunk at build time (tools/build_assets_ds.py), text comes from a
  * pre-baked bitmap font (font.bin), saves live in the cartridge's backup memory (with an in-RAM fallback). */
 #include "plat.h"
+#pragma GCC optimize ("O3")
+#pragma GCC target ("arm")      /* hot pixel loops: ARM mode (the project default is Thumb, which is slower for this) */
 #include <nds.h>
 #include <filesystem.h>
 #include <nds/card.h>
@@ -222,6 +224,11 @@ static void blit(Tgt *t, const Img *im, float su0, float sv0, float su1, float s
             int v = (int)(sv0 + ((y + 0.5f - dy) / dh) * svh); if (v < (int)sv0) v = (int)sv0; if (v >= (int)(sv0 + svh)) v = (int)(sv0 + svh) - 1; if (v >= im->sh) v = im->sh - 1; if (v < 0) v = 0;
             const u16 *srow = im->px + v * sw; const u8 *arow = im->al ? im->al + v * sw : NULL;
             int u_fix = (int)(((cx0 + 0.5f - dx) / dw * suw + su0) * 65536.0f), ustep = (int)(suw / dw * 65536.0f);
+            if (!arow && plain) {                           /* opaque picture, no tint: straight copy / nearest scale */
+                if (ustep == 65536 && u_fix >= 0 && (u_fix >> 16) + (cx1 - cx0) <= sw) { memcpy(row + cx0, srow + (u_fix >> 16), (cx1 - cx0) * 2); continue; }
+                for (int x = cx0; x < cx1; x++, u_fix += ustep) { int u = u_fix >> 16; if (u < 0) u = 0; if (u >= sw) u = sw - 1; row[x] = srow[u]; }
+                continue;
+            }
             for (int x = cx0; x < cx1; x++, u_fix += ustep) {
                 int u = u_fix >> 16; if (u < 0) u = 0; if (u >= sw) u = sw - 1;
                 u16 c = srow[u]; u32 a = 32;
