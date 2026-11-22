@@ -1615,6 +1615,12 @@ static inline BOOL js_check_stack_overflow(JSRuntime *rt, size_t alloca_size)
 }
 #endif
 
+#ifdef OSH_DS
+extern void plat_log(const char *, ...);
+#define OSHM(x) plat_log("q:" x)
+#else
+#define OSHM(x)
+#endif
 JSRuntime *JS_NewRuntime2(const JSMallocFunctions *mf, void *opaque)
 {
     JSRuntime *rt;
@@ -1624,7 +1630,9 @@ JSRuntime *JS_NewRuntime2(const JSMallocFunctions *mf, void *opaque)
     ms.opaque = opaque;
     ms.malloc_limit = -1;
 
+    OSHM("a");
     rt = mf->js_malloc(&ms, sizeof(JSRuntime));
+    OSHM("b");
     if (!rt)
         return NULL;
     memset(rt, 0, sizeof(*rt));
@@ -1636,6 +1644,7 @@ JSRuntime *JS_NewRuntime2(const JSMallocFunctions *mf, void *opaque)
     rt->malloc_state = ms;
     rt->malloc_gc_threshold = 256 * 1024;
 
+    OSHM("c");
     bf_context_init(&rt->bf_ctx, js_bf_realloc, rt);
     set_dummy_numeric_ops(&rt->bigint_ops);
 #ifdef CONFIG_BIGNUM
@@ -1653,9 +1662,11 @@ JSRuntime *JS_NewRuntime2(const JSMallocFunctions *mf, void *opaque)
 #endif
     init_list_head(&rt->job_list);
 
+    OSHM("d");
     if (JS_InitAtoms(rt))
         goto fail;
 
+    OSHM("e");
     /* create the object, array and function classes */
     if (init_class_range(rt, js_std_class_def, JS_CLASS_OBJECT,
                          countof(js_std_class_def)) < 0)
@@ -1668,9 +1679,11 @@ JSRuntime *JS_NewRuntime2(const JSMallocFunctions *mf, void *opaque)
     rt->class_array[JS_CLASS_C_FUNCTION_DATA].call = js_c_function_data_call;
     rt->class_array[JS_CLASS_BOUND_FUNCTION].call = js_call_bound_function;
     rt->class_array[JS_CLASS_GENERATOR_FUNCTION].call = js_generator_function_call;
+    OSHM("f");
     if (init_shape_hash(rt))
         goto fail;
 
+    OSHM("g");
     rt->stack_size = JS_DEFAULT_STACK_SIZE;
     JS_UpdateStackTop(rt);
 
