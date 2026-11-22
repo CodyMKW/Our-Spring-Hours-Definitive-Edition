@@ -31,7 +31,7 @@ jobs:
       - name: Show rest of template makefile
         run: sed -n 150,330p $BLOCKSDS/sys/default_makefiles/rom_arm9/Makefile
       - name: Build
-        run: make -C nds -j2
+        run: make -C nds -j2 ARCH="-marm -mcpu=arm946e-s+nofp"
       - name: Size report
         run: |
           ls -l nds/*.nds
