@@ -363,4 +363,4 @@ bool plat_frame_begin(void) {
     }
     return true;
 }
-void plat_frame_end(void) { swiWaitForVBlank(); dmaCopy(bb0, vram_top, sizeof bb0); dmaCopy(bb1, vram_bot, sizeof bb1); }
+void plat_frame_end(void) { dbg[3]++; swiWaitForVBlank(); dmaCopy(bb0, vram_top, sizeof bb0); dmaCopy(bb1, vram_bot, sizeof bb1); }
