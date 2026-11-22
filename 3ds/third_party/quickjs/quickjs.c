@@ -40,6 +40,12 @@
 #include <malloc_np.h>
 #endif
 
+#ifdef OSH_DS
+extern void plat_log(const char *, ...);
+#define OSHM(x) plat_log("q:" x)
+#else
+#define OSHM(x)
+#endif
 #include "cutils.h"
 #include "list.h"
 #include "quickjs.h"
@@ -1525,6 +1531,9 @@ static int init_class_range(JSRuntime *rt, JSClassShortDef const *tab,
 
     for(i = 0; i < count; i++) {
         class_id = i + start;
+#ifdef OSH_DS
+        plat_log("c%d", i);
+#endif
         memset(cm, 0, sizeof(*cm));
         cm->finalizer = tab[i].finalizer;
         cm->gc_mark = tab[i].gc_mark;
@@ -1615,12 +1624,6 @@ static inline BOOL js_check_stack_overflow(JSRuntime *rt, size_t alloca_size)
 }
 #endif
 
-#ifdef OSH_DS
-extern void plat_log(const char *, ...);
-#define OSHM(x) plat_log("q:" x)
-#else
-#define OSHM(x)
-#endif
 JSRuntime *JS_NewRuntime2(const JSMallocFunctions *mf, void *opaque)
 {
     JSRuntime *rt;
