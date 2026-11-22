@@ -45,6 +45,7 @@ static void app_main(void) {
     fb = bgGetGfxPtr(bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
     for (int i = 0; i < 256 * 192; i++) fb[i] = RGB15(2, 2, 6) | BIT(15);
     dbg[0] = 1; crumb(0, RGB15(31, 31, 31));
+    { for (volatile unsigned i = 0; i < 40000000u; i++) { if ((i & 0xFFFFF) == 0) dbg[3] = i >> 20; } dbg[2] = 77; }
     bool ok = nitroFSInit(NULL); dbg[1] = 10 + ok; crumb(1, ok ? RGB15(0, 31, 0) : RGB15(31, 0, 0));
     struct mallinfo m0 = mallinfo(); (void)m0;
     cpuStartTiming(0);
