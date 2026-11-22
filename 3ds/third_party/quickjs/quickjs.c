@@ -52329,13 +52329,21 @@ static void JS_AddIntrinsicBasicObjects(JSContext *ctx)
 
     OSHM("b4");
     for(i = 0; i < JS_NATIVE_ERROR_COUNT; i++) {
+        OSHM("L0");
         proto = JS_NewObjectProto(ctx, ctx->class_proto[JS_CLASS_ERROR]);
+        OSHM("L1");
+        { JSValue nm = JS_NewAtomString(ctx, native_error_name[i]);
+        OSHM("L2");
         JS_DefinePropertyValue(ctx, proto, JS_ATOM_name,
-                               JS_NewAtomString(ctx, native_error_name[i]),
-                               JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
+                               nm,
+                               JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE); }
+        OSHM("L3");
+        { JSValue es = JS_AtomToString(ctx, JS_ATOM_empty_string);
+        OSHM("L4");
         JS_DefinePropertyValue(ctx, proto, JS_ATOM_message,
-                               JS_AtomToString(ctx, JS_ATOM_empty_string),
-                               JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
+                               es,
+                               JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE); }
+        OSHM("L5");
         ctx->native_error_proto[i] = proto;
     }
 
