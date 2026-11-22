@@ -2170,21 +2170,21 @@ JSContext *JS_NewContext(JSRuntime *rt)
 {
     JSContext *ctx;
 
-    ctx = JS_NewContextRaw(rt);
+    OSHM("ctx0"); ctx = JS_NewContextRaw(rt); OSHM("ctx1");
     if (!ctx)
         return NULL;
 
-    JS_AddIntrinsicBaseObjects(ctx);
-    JS_AddIntrinsicDate(ctx);
-    JS_AddIntrinsicEval(ctx);
-    JS_AddIntrinsicStringNormalize(ctx);
-    JS_AddIntrinsicRegExp(ctx);
-    JS_AddIntrinsicJSON(ctx);
-    JS_AddIntrinsicProxy(ctx);
-    JS_AddIntrinsicMapSet(ctx);
-    JS_AddIntrinsicTypedArrays(ctx);
-    JS_AddIntrinsicPromise(ctx);
-    JS_AddIntrinsicBigInt(ctx);
+    JS_AddIntrinsicBaseObjects(ctx); OSHM("i0");
+    JS_AddIntrinsicDate(ctx); OSHM("i1");
+    JS_AddIntrinsicEval(ctx); OSHM("i2");
+    JS_AddIntrinsicStringNormalize(ctx); OSHM("i3");
+    JS_AddIntrinsicRegExp(ctx); OSHM("i4");
+    JS_AddIntrinsicJSON(ctx); OSHM("i5");
+    JS_AddIntrinsicProxy(ctx); OSHM("i6");
+    JS_AddIntrinsicMapSet(ctx); OSHM("i7");
+    JS_AddIntrinsicTypedArrays(ctx); OSHM("i8");
+    JS_AddIntrinsicPromise(ctx); OSHM("i9");
+    JS_AddIntrinsicBigInt(ctx); OSHM("i10");
     return ctx;
 }
 
