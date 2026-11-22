@@ -30,16 +30,8 @@ jobs:
         with: { name: nds-assets, path: nds/nitrofs }
       - name: Show rest of template makefile
         run: sed -n 150,330p $BLOCKSDS/sys/default_makefiles/rom_arm9/Makefile
-      - name: Probes (liveness experiments)
-        run: |
-          mkdir -p probe && cp -r nds probe_src
-          for n in 9; do
-            rm -rf probe_src/build; make -C probe_src -j2 NAME=T$n EXTRA="-DPROBE=$n -DPROBE_ONLY" >/dev/null 2>&1 || echo "probe T$n failed"
-            cp probe_src/T$n.nds probe/ || true; cp probe_src/build/T$n.elf probe/ || true
-          done
-          ls -l probe
       - name: Build
-        run: make -C nds -j2 ARCH="-marm -mcpu=arm946e-s+nofp"
+        run: make -C nds -j2
       - name: Size report
         run: |
           ls -l nds/*.nds
@@ -56,5 +48,3 @@ jobs:
           files: |
             nds/OurSpringHours.nds
             nds/build/OurSpringHours.elf
-            probe/T9.nds
-            probe/T9.elf
