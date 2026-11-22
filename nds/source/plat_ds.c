@@ -25,6 +25,12 @@ void plat_log(const char *f, ...) {
     va_end(a); if (dbg_n < 5900) dbg_log[dbg_n++] = '\n';
 }
 
+/* ---------------------------------------------------------------- tiny profiler (ticks of the 33.5 MHz bus clock, read via dbg[]) */
+volatile unsigned prof[8];                  /* 0 rect 1 rrect 2 circle 3 blit 4 text 5 vblank-wait 6 dma 7 frame */
+static inline unsigned tnow(void) { return (unsigned)TIMER_DATA(2) | ((unsigned)TIMER_DATA(3) << 16); }
+#define PB(k) unsigned _pt##k = tnow()
+#define PE(k) (prof[k] += tnow() - _pt##k)
+
 /* ---------------------------------------------------------------- targets */
 typedef struct { u16 *px; float s, ox, oy; } Tgt;
 static u16 bb0[W * H] __attribute__((aligned(4))), bb1[W * H] __attribute__((aligned(4)));
@@ -73,10 +79,10 @@ static void rect_dev(Tgt *t, float x0, float y0, float x1, float y1, u16 c, u32 
     }
 }
 void plat_rect(float x, float y, float w, float h, uint32_t col) {
-    Tgt *t = &TG[cur]; rect_dev(t, TX(t, x), TY(t, y), TX(t, x + w), TY(t, y + h), rgb555(col), a32of(col));
+    PB(0); Tgt *t = &TG[cur]; rect_dev(t, TX(t, x), TY(t, y), TX(t, x + w), TY(t, y + h), rgb555(col), a32of(col)); PE(0);
 }
 void plat_rect_grad(float x, float y, float w, float h, uint32_t c0, uint32_t c1) {
-    Tgt *t = &TG[cur]; float y0 = TY(t, y), y1 = TY(t, y + h), x0 = TX(t, x), x1 = TX(t, x + w);
+    PB(0); Tgt *t = &TG[cur]; float y0 = TY(t, y), y1 = TY(t, y + h), x0 = TX(t, x), x1 = TX(t, x + w);
     int iy0 = (int)floorf(y0), iy1 = (int)ceilf(y1); if (iy0 < 0) iy0 = 0; if (iy1 > H) iy1 = H; if (y1 <= y0) return;
     int r0 = c0 >> 24, g0 = (c0 >> 16) & 255, b0 = (c0 >> 8) & 255, a0 = c0 & 255, r1 = c1 >> 24, g1 = (c1 >> 16) & 255, b1 = (c1 >> 8) & 255, a1 = c1 & 255;
     for (int yy = iy0; yy < iy1; yy++) {
@@ -84,6 +90,7 @@ void plat_rect_grad(float x, float y, float w, float h, uint32_t c0, uint32_t c1
         uint32_t c = RGBA(r0 + (((r1 - r0) * f) >> 8), g0 + (((g1 - g0) * f) >> 8), b0 + (((b1 - b0) * f) >> 8), a0 + (((a1 - a0) * f) >> 8));
         rect_dev(t, x0, (float)yy, x1, (float)yy + 1, rgb555(c), a32of(c));
     }
+    PE(0);
 }
 static void rrect_dev(Tgt *t, float x0, float y0, float x1, float y1, float r, u16 c, u32 a) {
     float w = x1 - x0, h = y1 - y0; if (w <= 0 || h <= 0 || a == 0) return;
@@ -101,7 +108,7 @@ static void rrect_dev(Tgt *t, float x0, float y0, float x1, float y1, float r, u
     }
 }
 void plat_rrect(float x, float y, float w, float h, float r, uint32_t col) {
-    Tgt *t = &TG[cur]; rrect_dev(t, TX(t, x), TY(t, y), TX(t, x + w), TY(t, y + h), r * t->s, rgb555(col), a32of(col));
+    PB(1); Tgt *t = &TG[cur]; rrect_dev(t, TX(t, x), TY(t, y), TX(t, x + w), TY(t, y + h), r * t->s, rgb555(col), a32of(col)); PE(1);
 }
 void plat_rrect_line(float x, float y, float w, float h, float r, uint32_t col) {
     Tgt *t = &TG[cur]; float x0 = TX(t, x), y0 = TY(t, y), x1 = TX(t, x + w), y1 = TY(t, y + h), rr = r * t->s; u16 c = rgb555(col); u32 a = a32of(col);
@@ -127,7 +134,7 @@ static void circle_dev(Tgt *t, float cx, float cy, float r, float ri, u16 c, u32
         else spanf(t->px + y * W, cx - ho, cx + ho, c, a);
     }
 }
-void plat_circle(float x, float y, float r, uint32_t col) { Tgt *t = &TG[cur]; circle_dev(t, TX(t, x), TY(t, y), r * t->s, 0, rgb555(col), a32of(col)); }
+void plat_circle(float x, float y, float r, uint32_t col) { PB(2); Tgt *t = &TG[cur]; circle_dev(t, TX(t, x), TY(t, y), r * t->s, 0, rgb555(col), a32of(col)); PE(2); }
 void plat_ring(float x, float y, float r, float th, uint32_t col) {
     Tgt *t = &TG[cur]; float R = (r + th / 2) * t->s, ri = (r - th / 2) * t->s; if (R - ri < 1.0f) { ri = R - 1.0f; } if (ri < 0) ri = 0;
     circle_dev(t, TX(t, x), TY(t, y), R, ri, rgb555(col), a32of(col));
@@ -209,7 +216,7 @@ static void blit(Tgt *t, const Img *im, float su0, float sv0, float su1, float s
     }
 }
 void plat_img_draw(const Img *im, float x, float y, float sx, float sy, float rot, uint32_t tint) {
-    Tgt *t = &TG[cur]; blit(t, im, 0, 0, im->sw, im->sh, TX(t, x), TY(t, y), im->lw * sx * t->s, im->lh * sy * t->s, rot, tint);
+    PB(3); Tgt *t = &TG[cur]; blit(t, im, 0, 0, im->sw, im->sh, TX(t, x), TY(t, y), im->lw * sx * t->s, im->lh * sy * t->s, rot, tint); PE(3);
 }
 void plat_img_draw_part(const Img *im, int sx, int sy, int sw, int sh, float x, float y, float w, float h, uint32_t tint) {
     Tgt *t = &TG[cur]; float fx = (float)im->sw / im->lw, fy = (float)im->sh / im->lh;
@@ -262,11 +269,11 @@ static void draw_run(Tgt *t, const SizeRec *sz, float ox, float oy, uint32_t col
 }
 void plat_text(float x, float y, float size, uint32_t col, int fl, const char *s) {
     if (!fontdata || !*s) return;
-    Tgt *t = &TG[cur]; const SizeRec *sz = size_for(size);
+    PB(4); Tgt *t = &TG[cur]; const SizeRec *sz = size_for(size);
     float w = plat_text_w(size, s) * t->s; float ox = TX(t, x), oy = TY(t, y);
     if (fl & T_CENTER) ox -= w / 2; else if (fl & T_RIGHT) ox -= w;
     if (fl & T_SHADOW) draw_run(t, sz, ox + 1, oy + 1, RGBA(0, 0, 0, (int)((col & 255) * 0.6f)), s);
-    draw_run(t, sz, ox, oy, col, s);
+    draw_run(t, sz, ox, oy, col, s); PE(4);
 }
 
 /* ---------------------------------------------------------------- persistence: cartridge backup memory (+ RAM mirror) */
@@ -333,6 +340,7 @@ void plat_set_volume(float m, float s) { (void)m; (void)s; }
 bool plat_init(int argc, char **argv) {
     (void)argc; (void)argv;
     TIMER_DATA(0) = 0; TIMER_CR(0) = TIMER_ENABLE | TIMER_DIV_1024; TIMER_DATA(1) = 0; TIMER_CR(1) = TIMER_ENABLE | TIMER_CASCADE;
+    TIMER_DATA(2) = 0; TIMER_CR(2) = TIMER_ENABLE | TIMER_DIV_1; TIMER_DATA(3) = 0; TIMER_CR(3) = TIMER_ENABLE | TIMER_CASCADE;
     powerOn(POWER_ALL_2D);
     videoSetMode(MODE_5_2D); videoSetModeSub(MODE_5_2D);
     vramSetBankA(VRAM_A_MAIN_BG); vramSetBankC(VRAM_C_SUB_BG);
@@ -363,4 +371,7 @@ bool plat_frame_begin(void) {
     }
     return true;
 }
-void plat_frame_end(void) { dbg[3]++; swiWaitForVBlank(); dmaCopy(bb0, vram_top, sizeof bb0); dmaCopy(bb1, vram_bot, sizeof bb1); }
+void plat_frame_end(void) {
+    static unsigned last; unsigned n = tnow(); if (last) prof[7] += n - last;
+    dbg[3]++; PB(5); swiWaitForVBlank(); PE(5); PB(6); dmaCopy(bb0, vram_top, sizeof bb0); dmaCopy(bb1, vram_bot, sizeof bb1); PE(6); last = tnow();
+}
