@@ -3452,8 +3452,14 @@ static int JS_NewClass1(JSRuntime *rt, JSClassID class_id,
             ctx->class_proto = new_tab;
         }
         /* reallocate the class array */
+#ifdef OSH_DS
+        plat_log("n%d sz%d", new_size, (int)(sizeof(JSClass) * new_size));
+#endif
         new_class_array = js_realloc_rt(rt, rt->class_array,
                                         sizeof(JSClass) * new_size);
+#ifdef OSH_DS
+        plat_log("r%x", (unsigned)new_class_array);
+#endif
         if (!new_class_array)
             return -1;
         memset(new_class_array + rt->class_count, 0,

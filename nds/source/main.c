@@ -48,6 +48,7 @@ static void app_main(void) {
     bool ok = nitroFSInit(NULL); dbg[1] = 10 + ok; crumb(1, ok ? RGB15(0, 31, 0) : RGB15(31, 0, 0));
     struct mallinfo m0 = mallinfo(); (void)m0;
     cpuStartTiming(0);
+    { void *tp = malloc(5000); plat_log("m%x", (unsigned)tp); void *tq = realloc(NULL, 4000); plat_log("m%x", (unsigned)tq); }
     dbg[7] = 1; bool b = js_boot(); u32 t = cpuEndTiming(); dbg[2] = 10 + b; dbg[3] = t; crumb(2, b ? RGB15(0, 31, 0) : RGB15(31, 0, 0));
     /* boot time in 1/10 s as a bar of blocks, memory used in 100K units as blocks on row 2 */
     int tenths = t / 3351400; for (int i = 0; i < tenths && i < 25; i++) crumb(3 + i, RGB15(31, 20, 0));
