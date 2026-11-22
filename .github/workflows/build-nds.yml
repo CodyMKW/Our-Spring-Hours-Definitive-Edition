@@ -5,7 +5,7 @@ permissions:
 on:
   workflow_dispatch:
   push:
-    paths: ["nds/**", "3ds/js/**", "3ds/source/**", "assets/**", "js/**", ".github/workflows/build-nds.yml"]
+    paths: ["nds/**", "3ds/js/**", "3ds/source/**", "3ds/third_party/**", "assets/**", "js/**", ".github/workflows/build-nds.yml"]
 jobs:
   assets:
     runs-on: ubuntu-latest
