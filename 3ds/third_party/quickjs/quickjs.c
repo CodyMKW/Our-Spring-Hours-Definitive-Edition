@@ -4865,6 +4865,7 @@ static JSObject *get_proto_obj(JSValueConst proto_val)
 JSValue JS_NewObjectProtoClass(JSContext *ctx, JSValueConst proto_val,
                                JSClassID class_id)
 {
+    OSHM("npc");
     JSShape *sh;
     JSObject *proto;
 
@@ -52303,10 +52304,13 @@ static void JS_AddIntrinsicBasicObjects(JSContext *ctx)
     JSValue proto;
     int i;
 
+    OSHM("b0");
     ctx->class_proto[JS_CLASS_OBJECT] = JS_NewObjectProto(ctx, JS_NULL);
+    OSHM("b1");
     ctx->function_proto = JS_NewCFunction3(ctx, js_function_proto, "", 0,
                                            JS_CFUNC_generic, 0,
                                            ctx->class_proto[JS_CLASS_OBJECT]);
+    OSHM("b2");
     ctx->class_proto[JS_CLASS_BYTECODE_FUNCTION] = JS_DupValue(ctx, ctx->function_proto);
     ctx->class_proto[JS_CLASS_ERROR] = JS_NewObject(ctx);
 #if 0
@@ -52319,10 +52323,12 @@ static void JS_AddIntrinsicBasicObjects(JSContext *ctx)
                            JS_AtomToString(ctx, JS_ATOM_empty_string),
                            JS_PROP_WRITABLE | JS_PROP_CONFIGURABLE);
 #endif
+    OSHM("b3");
     JS_SetPropertyFunctionList(ctx, ctx->class_proto[JS_CLASS_ERROR],
                                js_error_proto_funcs,
                                countof(js_error_proto_funcs));
 
+    OSHM("b4");
     for(i = 0; i < JS_NATIVE_ERROR_COUNT; i++) {
         proto = JS_NewObjectProto(ctx, ctx->class_proto[JS_CLASS_ERROR]);
         JS_DefinePropertyValue(ctx, proto, JS_ATOM_name,
@@ -52334,11 +52340,13 @@ static void JS_AddIntrinsicBasicObjects(JSContext *ctx)
         ctx->native_error_proto[i] = proto;
     }
 
+    OSHM("b5");
     /* the array prototype is an array */
     ctx->class_proto[JS_CLASS_ARRAY] =
         JS_NewObjectProtoClass(ctx, ctx->class_proto[JS_CLASS_OBJECT],
                                JS_CLASS_ARRAY);
 
+    OSHM("b6");
     ctx->array_shape = js_new_shape2(ctx, get_proto_obj(ctx->class_proto[JS_CLASS_ARRAY]),
                                      JS_PROP_INITIAL_HASH_SIZE, 1);
     add_shape_property(ctx, &ctx->array_shape, NULL,
