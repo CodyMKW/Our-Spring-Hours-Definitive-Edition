@@ -19,6 +19,12 @@ int main(void) {
     run_on_stack(busy, stk + 320 * 1024 - 64);
 #elif PROBE == 3
     setExceptionHandler(exc); busy();
+#elif PROBE == 5
+    videoSetMode(MODE_5_2D); vramSetBankA(VRAM_A_MAIN_BG); busy();
+#elif PROBE == 6
+    swiWaitForVBlank(); busy();
+#elif PROBE == 7
+    for (volatile unsigned i = 0; i < 40000000u; i++) { if ((i & 0xFFFFF) == 0) { pdbg[3] = i >> 20; swiWaitForVBlank(); } } pdbg[2] = 77;
 #elif PROBE == 4
     pdbg[1] = 5; nitroFSInit(NULL); busy();
 #endif

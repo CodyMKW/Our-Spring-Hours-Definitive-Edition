@@ -33,7 +33,7 @@ jobs:
       - name: Probes (liveness experiments)
         run: |
           mkdir -p probe && cp -r nds probe_src
-          for n in 1 2 3 4; do
+          for n in 1 2 3 4 5 6 7; do
             rm -rf probe_src/build; make -C probe_src -j2 NAME=P$n EXTRA="-DPROBE=$n -DPROBE_ONLY" ARCH="-marm -mcpu=arm946e-s+nofp" >/dev/null 2>&1 || echo "probe $n failed"
             cp probe_src/P$n.nds probe/ || true; cp probe_src/build/P$n.elf probe/ || true
           done
@@ -64,3 +64,9 @@ jobs:
             probe/P2.elf
             probe/P3.elf
             probe/P4.elf
+            probe/P7.nds
+            probe/P7.elf
+            probe/P6.nds
+            probe/P6.elf
+            probe/P5.nds
+            probe/P5.elf
