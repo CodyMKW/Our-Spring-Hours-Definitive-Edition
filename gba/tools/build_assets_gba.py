@@ -62,7 +62,7 @@ for c in ids["chars"]:
 
 # ---------------- font: 9px DejaVu Sans, 2-bit alpha stored as 1 byte per pixel
 FS = 9
-font = ImageFont.truetype(fontpath, FS)
+font = ImageFont.truetype(fontpath, FS, layout_engine=ImageFont.Layout.BASIC)
 cps = sorted(set(chars) | set(chr(c) for c in range(32, 127)))
 glyphs = []
 for ch in cps:
