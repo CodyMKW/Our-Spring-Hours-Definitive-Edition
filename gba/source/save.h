@@ -7,7 +7,7 @@ typedef struct {
     u8 textspeed, skipunread, music;
     VNState carry[3];
     u8 seen[(3900 + 7) / 8];
-    u16 bd_best[12]; u32 bd_flags;       /* Blossom Drop records / unlocks */
+    u32 bd_best[9], bd_top, bd_games; u8 bd_maxtier, bd_combo, bd_last, bd_pad;   /* Blossom Drop records (bd_best per BD.CHARS index) */
 } Global;
 extern Global G; extern Slot slots[13];
 void save_init(void);                    /* load from SRAM (or format it) */

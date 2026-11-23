@@ -7,9 +7,9 @@ FONT    ?= /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
 ROOT    := ..
 GEN     := build/gen
 ARCH    := -mcpu=arm7tdmi -mthumb -mthumb-interwork
-CFLAGS  := $(ARCH) -O2 -ffreestanding -fno-exceptions -fno-strict-aliasing -Wall -Wno-unused -Isource -I$(GEN) -Ibuild/assets -fomit-frame-pointer -ffunction-sections -fdata-sections
+CFLAGS  := $(ARCH) -O2 -ffreestanding -fno-exceptions -fno-strict-aliasing -Wall -Wno-unused -Isource -I$(GEN) -Ibuild/assets -fomit-frame-pointer -ffunction-sections -fdata-sections $(EXTRA)
 SRC     := $(wildcard source/*.c)
-OBJ     := $(patsubst source/%.c,build/%.o,$(SRC)) build/story_data.o build/crt0.o build/assets.o
+OBJ     := $(patsubst source/%.c,build/%.o,$(SRC)) build/story_data.o build/bd_data.o build/crt0.o build/assets.o
 .PHONY: all clean
 all: OurSpringHours.gba
 $(GEN)/story_data.c: $(wildcard $(ROOT)/js/*.js $(ROOT)/js/story/*.js) tools/compile_story.js tools/fn_hash.txt
@@ -32,3 +32,5 @@ OurSpringHours.gba: build/OurSpringHours.elf
 	@ls -l $@
 clean:
 	rm -rf build OurSpringHours.gba
+build/bd_data.o: $(GEN)/story_data.c
+	@mkdir -p build && $(CC) $(CFLAGS) -c $(GEN)/bd_data.c -o $@

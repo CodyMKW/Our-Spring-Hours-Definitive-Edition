@@ -60,6 +60,51 @@ for c in ids["chars"]:
     palb = struct.pack("<H", 0) + b"".join(struct.pack("<H", rgb555(pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2])) for i in range(15))
     hdr.append(("CHAR_" + c["id"], add(palb + tiles4(idx[:64], 64, 64) + tiles4(idx[64:], 64, 32))))
 
+
+# ---------------- Blossom Drop orb sprites (drawn here; the GBA jar is the web jar at SCALE)
+SCALE = 0.22
+SS = 8
+def lerp(a, b, t): return tuple(a[i] + (b[i] - a[i]) * t for i in range(3))
+def hex_rgb(h): h = h.lstrip("#"); return tuple(int(h[i:i + 2], 16) for i in range(0, 6, 2))
+def orb_image(S, R, cols):
+    n = S * SS; img = np.zeros((n, n, 4), dtype=np.float32)
+    yy, xx = np.mgrid[0:n, 0:n].astype(np.float32); cx = cy = n / 2; Rr = R * SS
+    d = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+    hx, hy = cx - 0.32 * Rr, cy - 0.36 * Rr
+    dh = np.sqrt((xx - hx) ** 2 + (yy - hy) ** 2) / (1.5 * Rr)
+    t = np.clip(dh, 0, 1)[..., None]
+    c0, c1, c2 = (np.array(hex_rgb(c), dtype=np.float32) for c in cols)
+    col = np.where(t < 0.5, c0 + (c1 - c0) * (t / 0.5), c1 + (c2 - c1) * ((t - 0.5) / 0.5))
+    inside = d <= Rr
+    edge = (d > Rr - 1.3 * SS) & inside
+    col = np.where(edge[..., None], c2 * 0.55, col)
+    gl = (((xx - (cx - 0.36 * Rr)) / (0.22 * Rr)) ** 2 + ((yy - (cy - 0.42 * Rr)) / (0.13 * Rr)) ** 2) < 1
+    col = np.where((gl & inside)[..., None], np.minimum(col * 0.35 + 255 * 0.65, 255), col)
+    img[..., :3] = col; img[..., 3] = inside * 255
+    im = Image.fromarray(img.astype(np.uint8), "RGBA").resize((S, S), Image.BOX)
+    return im
+def to_obj(im, ncol=15):
+    a = np.array(im.getchannel("A")) >= 128
+    rgb = Image.new("RGB", im.size, (0, 0, 0)); rgb.paste(im.convert("RGB"), mask=im.getchannel("A").point(lambda v: 255 if v >= 128 else 0))
+    q = rgb.quantize(colors=ncol, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+    pal = q.getpalette()[: ncol * 3]; pal += [0] * (ncol * 3 - len(pal))
+    idx = np.array(q, dtype=np.uint8) + 1; idx[~a] = 0
+    return idx, [0] + [rgb555(pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2]) for i in range(ncol)]
+bdt = ids["bd"]["tiers"]
+orb_tiles = bytearray(); orb_pal = bytearray(); orb_info = []
+for k, t in enumerate(bdt):
+    diam = 2 * t["r"] * SCALE; S = 8 if diam <= 8 else 16 if diam <= 16 else 32 if diam <= 32 else 64
+    idx, pal = to_obj(orb_image(S, diam / 2, t["c24"]))
+    orb_info.append((S, len(orb_tiles) // 32)); orb_tiles += tiles4(idx, S, S)
+    orb_pal += b"".join(struct.pack("<H", c) for c in pal)
+# extras: fireball 16x16 (pal bank 10), shelf block 32x8 (bank 11)
+fire = orb_image(16, 7.5, ["#fff1b8", "#ff8a3d", "#c0301f"]); idx, pal = to_obj(fire); orb_info.append((16, len(orb_tiles) // 32)); orb_tiles += tiles4(idx, 16, 16); orb_pal += b"".join(struct.pack("<H", c) for c in pal)
+stone = np.full((8, 32), 1, dtype=np.uint8); stone[0, :] = 2; stone[7, :] = 3; stone[:, 0] = 3; stone[:, 31] = 3
+orb_info.append((32, len(orb_tiles) // 32)); orb_tiles += tiles4(stone, 32, 8)
+orb_pal += b"".join(struct.pack("<H", c) for c in [0, rgb555(185, 160, 135), rgb555(215, 195, 170), rgb555(110, 90, 75)] + [0] * 12)
+hdr.append(("ORBPAL", add(bytes(orb_pal))))
+hdr.append(("ORBTILES", add(bytes(orb_tiles))))
+
 # ---------------- font: 9px DejaVu Sans, 2-bit alpha stored as 1 byte per pixel
 FS = 9
 font = ImageFont.truetype(fontpath, FS, layout_engine=ImageFont.Layout.BASIC)
@@ -88,5 +133,6 @@ with open(os.path.join(out, "assets.h"), "w") as f:
     f.write("static const unsigned BG_OFF[] = { " + ", ".join(str(o) for n, o in hdr if n.startswith("BG_")) + " };\n")
     f.write("static const unsigned CHAR_OFF[] = { " + ", ".join(str(o) for n, o in hdr if n.startswith("CHAR_")) + " };\n")
     f.write("static const unsigned short CHAR_COL[] = { " + ", ".join(str(c["color"]) for c in ids["chars"]) + " };\n")
+    f.write("/* orb sprite sheet: (size px, first tile) per tier 0..9, then fireball, stone shelf */\nstatic const unsigned char ORB_SIZE[] = { " + ", ".join(str(a) for a, b in orb_info) + " };\nstatic const unsigned short ORB_TILE[] = { " + ", ".join(str(b) for a, b in orb_info) + " };\n#define ORBTILES_BYTES " + str(len(orb_tiles)) + "u\n")
     f.write(f"#define ASSETS_SIZE {len(blob)}u\n")
 print("assets.bin", len(blob) // 1024, "KB;", len(ids["bgs"]), "bgs,", len(ids["chars"]), "chars,", len(glyphs), "glyphs")

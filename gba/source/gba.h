@@ -44,7 +44,7 @@
 enum { KEY_A = 1, KEY_B = 2, KEY_SELECT = 4, KEY_START = 8, KEY_RIGHT = 16, KEY_LEFT = 32, KEY_UP = 64, KEY_DOWN = 128, KEY_R = 256, KEY_L = 512 };
 #define W 240
 #define H 160
-#define IWRAM_CODE __attribute__((section(".iwram"), long_call, target("arm")))
+#define IWRAM_CODE __attribute__((section(".iwram"), long_call, target("arm"), noinline))
 #define EWRAM __attribute__((section(".ewram")))
 
 /* assets.S */

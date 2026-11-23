@@ -1,5 +1,6 @@
 #include "ui.h"
 extern int ui_list_backdrop;
+void bd_main(void);
 
 static void endings_screen(void) {
     static char lab[40][48]; const char *items[40]; int n = 0;
@@ -44,9 +45,9 @@ int main(void) {
     gfx_init(); save_init();
     for (;;) {
         int latest = vn_latest_slot();
-        const char *items[6]; int map[6], n = 0;
+        const char *items[8]; int map[8], n = 0;
         if (latest >= 0) { items[n] = "Continue"; map[n++] = 0; }
-        items[n] = "New Game"; map[n++] = 1; items[n] = "Chapter Select"; map[n++] = 2; items[n] = "Load Game"; map[n++] = 3;
+        items[n] = "New Game"; map[n++] = 1; items[n] = "Chapter Select"; map[n++] = 2; items[n] = "Blossom Drop"; map[n++] = 6; items[n] = "Load Game"; map[n++] = 3;
         items[n] = "Endings"; map[n++] = 4; items[n] = "Options"; map[n++] = 5;
         ui_list_backdrop = BG_courtyard_day;
         int r = ui_list("", items, n, 0, 0); r = map[r];
@@ -56,6 +57,7 @@ int main(void) {
         else if (r == 2) chapter_select();
         else if (r == 3) { static char lab[13][48]; const char *it[13]; for (int i = 0; i < 13; i++) { char *d = lab[i]; if (i == 0) d = scat(d, "Auto: "); else { d = scat(d, "Slot "); d = snum(d, i); d = scat(d, ": "); } if (!slots[i].used) scat(d, "(empty)"); else { char t[48]; vn_chapter_text(t, &slots[i].st); scat(d, t); } it[i] = lab[i]; }
             int s = ui_list("Load which slot?", it, 13, 0, 1); if (s >= 0 && vn_load_slot(s)) vn_play(); }
+        else if (r == 6) bd_main();
         else if (r == 4) endings_screen();
         else options_screen();
         ui_bg_current = -1;

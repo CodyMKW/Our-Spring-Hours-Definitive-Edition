@@ -1,6 +1,6 @@
 #include "save.h"
 Global G EWRAM; Slot slots[13] EWRAM;
-#define MAGIC 0x3148534F   /* "OSH1" */
+#define MAGIC 0x3248534F   /* "OSH2" */
 static void sw(u32 off, const void *p, u32 n) { const u8 *s = p; for (u32 i = 0; i < n; i++) SRAM[off + i] = s[i]; }
 static void sr(u32 off, void *p, u32 n) { u8 *d = p; for (u32 i = 0; i < n; i++) d[i] = SRAM[off + i]; }
 #define OFF_G 0
