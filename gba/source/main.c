@@ -15,9 +15,9 @@ static void endings_screen(void) {
 static void options_screen(void) {
     for (;;) {
         char a[40], b[40]; scat(scat(a, "Text speed: "), G.textspeed == 0 ? "slow" : G.textspeed == 1 ? "normal" : G.textspeed == 2 ? "fast" : "instant"); scat(scat(b, "Skip unread text: "), G.skipunread ? "on" : "off");
-        const char *it[] = { a, b };
-        int saved = ui_list_backdrop; ui_list_backdrop = -1; int r = ui_list("Options", it, 2, 0, 1); ui_list_backdrop = saved;
-        if (r < 0) return; if (r == 0) G.textspeed = (G.textspeed + 1) & 3; else G.skipunread ^= 1; save_global();
+        const char *it[] = { a, b, G.music ? "Sound: on" : "Sound: off" };
+        int saved = ui_list_backdrop; ui_list_backdrop = -1; int r = ui_list("Options", it, 3, 0, 1); ui_list_backdrop = saved;
+        if (r < 0) return; if (r == 0) G.textspeed = (G.textspeed + 1) & 3; else if (r == 1) G.skipunread ^= 1; else G.music ^= 1; save_global();
     }
 }
 static void chapter_select(void) {
@@ -42,8 +42,9 @@ static void chapter_select(void) {
 }
 
 int main(void) {
-    gfx_init(); save_init();
+    gfx_init(); save_init(); snd_init();
     for (;;) {
+        snd_music(MOOD_quiet);
         int latest = vn_latest_slot();
         const char *items[8]; int map[8], n = 0;
         if (latest >= 0) { items[n] = "Continue"; map[n++] = 0; }

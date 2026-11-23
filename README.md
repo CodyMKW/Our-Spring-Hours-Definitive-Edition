@@ -110,7 +110,7 @@ A `.nds` of the VN + Blossom Drop is on the [nds-latest release](../../releases/
 
 ## Game Boy Advance port (experimental)
 
-VN + solo Blossom Drop as a `.gba` on the [gba-latest release](../../releases/tag/gba-latest); see [`gba/README.md`](gba/README.md). Emulator-tested only, no sound yet.
+VN + solo Blossom Drop as a `.gba` on the [gba-latest release](../../releases/tag/gba-latest); see [`gba/README.md`](gba/README.md). Emulator-tested only, sound is generated on the GBA's PSG channels (untested by ear).
 
 ## Blossom Drop (minigame)
 

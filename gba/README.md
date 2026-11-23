@@ -6,7 +6,7 @@ Visual novel trilogy + bonus story + Blossom Drop (solo; Versus stays web-only).
 ## Status
 - Tested in mGBA (headless harness): title, Part I playthrough, choices, endings, saves menu, all 9 Blossom Drop characters and abilities. Blossom Drop runs ~50+ fps.
 - NOT tested on real hardware or in EmulatorJS. Saves use 32 KB SRAM (`SRAM_V113` tag in the ROM).
-- No sound yet. Not ported: keepsake cards, Memories gallery, backlog, Versus.
+- Sound: procedural PSG (square-wave melody + wave-channel bass, one generated loop per story mood, plus effects for choices, drops, merges, game over). Toggle under Options or the pause menu. Not yet verified by ear. Not ported: keepsake cards, Memories gallery, backlog, Versus.
 
 ## Controls
 VN: A advance/confirm, hold B skip read text, L rewind, R auto-play, Start pause menu (save/load/settings).

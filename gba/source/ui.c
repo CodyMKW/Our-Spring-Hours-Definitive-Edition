@@ -1,8 +1,9 @@
 #include "ui.h"
+#include "sound.h"
 int ui_bg_current = -1;
 int ui_list_backdrop = -1;
 
-void ui_frame_end(void) { vsync(); input_poll(); weather_step(); fx_step(); }
+void ui_frame_end(void) { vsync(); snd_tick(); input_poll(); weather_step(); fx_step(); }
 void ui_fade(int out) {
     if (out) { REG_BLDCNT = 0x80 | 0x3F; for (int i = 0; i <= 16; i += 2) { REG_BLDY = i; vsync(); } gfx_faded = 1; }
 }

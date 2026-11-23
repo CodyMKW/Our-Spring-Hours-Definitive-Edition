@@ -58,7 +58,8 @@ static void merge(Orb *a, Orb *b) {
     a->alive = b->alive = 0;
     combo = (frame - lastMerge < 69) ? combo + 1 : 1; lastMerge = frame; if (combo > bestCombo) bestCombo = combo; merges++;
     int mult4 = 4 + (combo - 1);                          /* x0.25 steps */
-    if (tier >= 10) { add_score(120 * mult4 / 4); burst(mx, my, 18, 0); add_meter(350); toast("Full Bloom!"); return; }
+    if (tier >= 10) { add_score(120 * mult4 / 4); burst(mx, my, 18, 0); add_meter(350); snd_sfx(SFX_BLOOM, 0); toast("Full Bloom!"); return; }
+    snd_sfx(SFX_MERGE, tier > 9 ? 9 : tier);
     int nt = tier + 1; s32 r = rfx[nt - 1];
     s32 x = mx < r + 512 ? r + 512 : mx > JW_FX - r - 512 ? JW_FX - r - 512 : mx; s32 yy = my > FLOOR_FX - r - 256 ? FLOOR_FX - r - 256 : my;
     spawn(nt, x, yy, vx * 2 / 5, vy * 2 / 5, 12);
@@ -150,7 +151,8 @@ static void check_danger(void) {
         s32 sp = (o->x - o->px); if (sp < 0) sp = -sp; s32 sy = o->y - o->py; if (sy < 0) sy = -sy; sp += sy;
         if (frame - o->born > 90 && o->y - rfx[o->tier - 1] < LINE_FX && sp < 180) o->overT++; else if (o->overT) o->overT -= (o->overT > 1) ? 2 : 1;
         if (o->overT > worst) worst = o->overT; }
-    overWorst = worst; if (worst >= 144) { state = 3; fx_shake(3); dirty_hud = 1; }
+    if (worst >= 60 && worst > overWorst && !(frame & 15)) snd_sfx(SFX_WARN, 0);
+    overWorst = worst; if (worst >= 144) { state = 3; fx_shake(3); dirty_hud = 1; snd_music(0xFF); snd_sfx(SFX_OVER, 0); }
 }
 
 /* ------------------------------------------------------------------ drawing */
@@ -187,6 +189,7 @@ static void spr_orb(int *n, int tier, s32 x, s32 y) {      /* tier 1..10, centre
 }
 static void draw_oam(void) {
     int n = 0;
+    if (state == 3) { for (int i = 0; i < 128; i++) OAM[i * 4] = 0x200; return; }   /* game over: no sprites over the popup */
     for (int i = 0; i < MAXO; i++) if (orb[i].alive && n < 70) spr_orb(&n, orb[i].tier, orb[i].x, orb[i].y);
     /* dropper + guide */
     if (state == 0 && held) {
@@ -305,7 +308,7 @@ static int bd_select(int sel) {
 
 /* ------------------------------------------------------------------ main loop */
 static int play(int ch) {
-    new_game(ch); draw_static(); gfx_setup_sprites(); obj_enable(1);
+    snd_music(MOOD_festival); new_game(ch); draw_static(); gfx_setup_sprites(); obj_enable(1);
     G.bd_games++; G.bd_last = ch; REG_TM0CNT_H = 0; REG_TM1CNT_H = 0; REG_TM0CNT_L = 0; REG_TM1CNT_L = 0; REG_TM1CNT_H = 0x84; REG_TM0CNT_H = 0x80;
     for (;;) {
         u32 t0 = TNOW(); ui_frame_end(); u32 t1 = TNOW(); draw_oam(); u32 t2 = TNOW();
@@ -315,8 +318,8 @@ static int play(int ch) {
                 int sp = (keys_held & KEY_R) ? 2400 : 1000;
                 if (keys_held & KEY_LEFT) ptrx -= sp; if (keys_held & KEY_RIGHT) ptrx += sp;
                 if (ptrx < 0) ptrx = 0; if (ptrx > JW_FX) ptrx = JW_FX;
-                if ((keys_down & KEY_A) && frame >= dropReady && held) { s32 r = rfx[held - 1]; s32 x = ptrx < r + 256 ? r + 256 : ptrx > JW_FX - r - 256 ? JW_FX - r - 256 : ptrx; spawn(held, x, -SC22(46), 0, 380, 8); next_piece(); dropReady = frame + 30; combo = 0; }
-                if ((keys_down & KEY_B) && meter >= 1000) { int r = use_ability(); if (r == 1) { meter = 0; } else if (r == 0) toast("Nothing to use that on"); dirty_hud = 1; }
+                if ((keys_down & KEY_A) && frame >= dropReady && held) { s32 r = rfx[held - 1]; s32 x = ptrx < r + 256 ? r + 256 : ptrx > JW_FX - r - 256 ? JW_FX - r - 256 : ptrx; spawn(held, x, -SC22(46), 0, 380, 8); snd_sfx(SFX_DROP, 0); next_piece(); dropReady = frame + 30; combo = 0; }
+                if ((keys_down & KEY_B) && meter >= 1000) { int r = use_ability(); if (r == 1) { meter = 0; snd_sfx(SFX_ABILITY, 0); } else if (r == 0) toast("Nothing to use that on"); dirty_hud = 1; }
                 if (keys_down & KEY_START) { state = 4; }
             } else if (state == 4) {
                 obj_enable(0);
@@ -335,7 +338,7 @@ static int play(int ch) {
                     text_center(120, 56, "Game Over", RAMP_DARK_GOLD); char b[40]; char *d = scat(b, "Score: "); snum(d, score); text_center(120, 70, b, RAMP_DARK_WHITE);
                     d = scat(b, "Best chain: "); d = snum(d, maxTier); d = scat(d, "   Combo: "); snum(d, bestCombo); text_center(120, 82, b, RAMP_DARK_WHITE);
                     text_center(120, 94, "A: again   B: players", RAMP_DARK_GOLD); fb_flush(0, H); }
-                if (keys_down & KEY_A) { shown = 0; new_game(ch); draw_static(); gfx_setup_sprites(); continue; }
+                if (keys_down & KEY_A) { shown = 0; snd_music(MOOD_festival); new_game(ch); draw_static(); gfx_setup_sprites(); continue; }
                 if (keys_down & KEY_B) { shown = 0; return 0; }
             }
         } else if (state == 1) {       /* decree: choose the next piece 1..5 */
@@ -373,7 +376,7 @@ void bd_main(void) {
     int sel = G.bd_last < 9 ? G.bd_last : 0;
     for (;;) {
         int c = bd_select(sel); if (c < 0) break; sel = c;
-        play(c); spr_hide_all(); ui_bg_current = -1;
+        play(c); snd_music(MOOD_quiet); spr_hide_all(); ui_bg_current = -1;
     }
     spr_hide_all(); obj_enable(0);
 }

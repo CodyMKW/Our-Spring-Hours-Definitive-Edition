@@ -150,7 +150,7 @@ static void run(void) {
         case OP_WEATHER: S.idx += 2; S.wx = c[1] == NONE ? 0xFF : c[1]; break;
         case OP_CHAPTER: {
             S.chapter_t = c[1]; S.chapter_s = c[2]; VNState keep = S; S.idx += 3;
-            card_t = c[1]; card_s = c[2]; view = VW_BANNER; timer = 100;
+            card_t = c[1]; card_s = c[2]; view = VW_BANNER; timer = 100; snd_sfx(SFX_CHAPTER, 0);
             Slot *sl = &slots[0]; sl->used = 1; sl->stamp = ++G.stamp; sl->st = keep; sl->snip = NONE; save_slot(0); save_global(); return;
         }
         case OP_CARD: S.idx += 5; card_p = c[1]; card_t = c[2]; card_s = c[3]; card_e = c[4]; view = VW_CARD; return;
@@ -254,16 +254,17 @@ static int slots_menu(int saving) {
 }
 static int pause_menu(void) {            /* returns 1 to return to title */
     for (;;) {
-        const char *items[] = { "Resume", "Save", "Load", "Text speed", "Skip unread text", "Return to title" };
+        const char *items[] = { "Resume", "Save", "Load", "Text speed", "Skip unread text", "Return to title", "Sound" };
         char b1[32], b2[32]; scat(scat(b1, "Text speed: "), G.textspeed == 0 ? "slow" : G.textspeed == 1 ? "normal" : G.textspeed == 2 ? "fast" : "instant");
-        scat(scat(b2, "Skip unread: "), G.skipunread ? "on" : "off"); items[3] = b1; items[4] = b2;
-        int r = ui_list("Paused", items, 6, 0, 1);
+        scat(scat(b2, "Skip unread: "), G.skipunread ? "on" : "off"); items[3] = b1; items[4] = b2; items[6] = G.music ? "Sound: on" : "Sound: off";
+        int r = ui_list("Paused", items, 7, 0, 1);
         if (r <= 0) return 0;
         if (r == 1) { int s = slots_menu(1); if (s > 0) { slots[s].used = 1; slots[s].stamp = ++G.stamp; slots[s].st = S; slots[s].snip = cur_snip; save_slot(s); save_global(); ui_message("Saved.", ""); } }
         else if (r == 2) { int s = slots_menu(0); if (s >= 0 && slots[s].used) { S = slots[s].st; hist_n = 0; hist_head = 0; bg_shown = -1; wx_shown = -2; view = VW_NONE; run(); return 2; } }
         else if (r == 3) G.textspeed = (G.textspeed + 1) & 3;
         else if (r == 4) G.skipunread ^= 1;
         else if (r == 5) return 1;
+        else if (r == 6) G.music ^= 1;
         save_global();
     }
 }
@@ -317,7 +318,7 @@ void vn_play(void) {
     int tw = 0, held_auto = 0, need_draw = 1, blink = 0;
     if (view == VW_NONE) run();
     for (;;) {
-        ui_frame_end();
+        ui_frame_end(); snd_music(S.mood);
         if (toast_t) { toast_t--; if (!toast_t) need_draw = 1; }
         switch (view) {
         case VW_NONE: run(); if (view == VW_NONE) return; need_draw = 1; break;

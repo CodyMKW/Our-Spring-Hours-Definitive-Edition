@@ -1,4 +1,5 @@
 #pragma once
+#include "sound.h"
 #include "render.h"
 #include "save.h"
 /* blocking helpers; each loops with vsync until the user answers */
