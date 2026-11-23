@@ -1,0 +1,37 @@
+name: Build GBA
+on:
+  push:
+    branches: [main]
+    paths: ["gba/**", "js/**", "assets/**", "3ds/js/shim.js", ".github/workflows/build-gba.yml"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi binutils-arm-none-eabi fonts-dejavu-core
+          pip install pillow numpy
+      - name: Build gbafix (header checksum + logo)
+        run: |
+          git clone --depth 1 https://github.com/devkitPro/gba-tools.git /tmp/gba-tools
+          gcc -O1 -o /tmp/gbafix /tmp/gba-tools/src/gbafix.c
+      - name: Build ROM
+        run: make -C gba GBAFIX=/tmp/gbafix
+      - name: Size report
+        run: |
+          ls -l gba/OurSpringHours.gba
+          arm-none-eabi-size gba/build/OurSpringHours.elf
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: gba-latest
+          name: GBA build (latest)
+          body: "Game Boy Advance port of Our Spring Hours (VN + Blossom Drop). See gba/README.md."
+          files: gba/OurSpringHours.gba
+          prerelease: false
